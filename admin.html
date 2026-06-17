@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin — Jumex Fragua</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+  :root {
+    --brand: #1D9E75; --brand-dark: #0F6E56; --brand-light: #E1F5EE;
+    --danger: #E24B4A; --danger-light: #FCEBEB;
+    --amber: #EF9F27; --amber-light: #FAEEDA;
+    --gray-50: #F8F7F4; --gray-100: #F1EFE8; --gray-200: #E0DED6;
+    --gray-400: #888780; --gray-600: #5F5E5A; --gray-900: #2C2C2A;
+    --white: #ffffff;
+    --sidebar: 280px;
+    --radius: 10px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--gray-100); color: var(--gray-900); height: 100vh; overflow: hidden; }
+
+  #login-overlay { position: fixed; inset: 0; background: var(--gray-100); display: flex; align-items: center; justify-content: center; z-index: 1000; }
+  .login-box { background: var(--white); border-radius: 16px; padding: 40px 36px; width: 360px; border: 0.5px solid var(--gray-200); }
+  .login-box h1 { font-size: 20px; font-weight: 600; margin-bottom: 4px; }
+  .login-box p { font-size: 13px; color: var(--gray-600); margin-bottom: 24px; }
+  .field { margin-bottom: 14px; }
+  .field label { display: block; font-size: 12px; font-weight: 500; color: var(--gray-600); margin-bottom: 5px; }
+  .field input { width: 100%; padding: 10px 12px; border: 1px solid var(--gray-200); border-radius: var(--radius); font-size: 14px; outline: none; }
+  .field input:focus { border-color: var(--brand); }
+  .btn { padding: 10px 18px; border: none; border-radius: var(--radius); font-size: 13px; font-weight: 500; cursor: pointer; transition: opacity 0.15s; }
+  .btn:hover { opacity: 0.85; }
+  .btn-primary { background: var(--brand); color: var(--white); width: 100%; padding: 12px; font-size: 14px; }
+  .btn-sm { padding: 6px 12px; font-size: 12px; }
+  .btn-outline { background: var(--white); border: 1px solid var(--gray-200); color: var(--gray-900); }
+  .btn-danger { background: var(--danger); color: var(--white); }
+  .btn-success { background: var(--brand); color: var(--white); }
+  #login-err { font-size: 12px; color: var(--danger); margin-top: 8px; display: none; }
+
+  #app { height: 100vh; display: flex; flex-direction: column; }
+  .topbar { height: 52px; background: var(--white); border-bottom: 0.5px solid var(--gray-200); display: flex; align-items: center; padding: 0 20px; gap: 16px; flex-shrink: 0; }
+  .topbar-logo { font-size: 15px; font-weight: 600; color: var(--brand-dark); margin-right: 8px; }
+  .topbar-logo span { color: var(--gray-400); font-weight: 400; }
+  .topbar-tab { font-size: 13px; padding: 6px 14px; border-radius: 20px; cursor: pointer; color: var(--gray-600); transition: background 0.15s; border: none; background: none; }
+  .topbar-tab.active { background: var(--brand-light); color: var(--brand-dark); font-weight: 500; }
+  .topbar-spacer { flex: 1; }
+  .live-badge { font-size: 11px; background: var(--brand-light); color: var(--brand-dark); padding: 3px 10px; border-radius: 20px; display: flex; align-items: center; gap: 5px; }
+  .live-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--brand); animation: pulse 1.5s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+  .main-wrap { flex: 1; display: flex; overflow: hidden; }
+
+  .sidebar { width: var(--sidebar); background: var(--white); border-right: 0.5px solid var(--gray-200); display: flex; flex-direction: column; overflow: hidden; flex-shrink: 0; }
+  .sidebar-header { padding: 14px 16px 10px; border-bottom: 0.5px solid var(--gray-100); }
+  .sidebar-title { font-size: 12px; font-weight: 600; color: var(--gray-400); text-transform: uppercase; letter-spacing: 0.7px; }
+  .sidebar-search { margin-top: 8px; position: relative; }
+  .sidebar-search input { width: 100%; padding: 7px 10px 7px 30px; border: 1px solid var(--gray-200); border-radius: var(--radius); font-size: 13px; outline: none; }
+  .sidebar-search input:focus { border-color: var(--brand); }
+  .sidebar-search::before { content: '⌕'; position: absolute; left: 10px; top: 7px; color: var(--gray-400); font-size: 14px; }
+  .promotor-list { flex: 1; overflow-y: auto; }
+  .promotor-item { display: flex; align-items: center; gap: 10px; padding: 10px 16px; border-bottom: 0.5px solid var(--gray-100); cursor: pointer; transition: background 0.1s; }
+  .promotor-item:hover { background: var(--gray-50); }
+  .p-avatar { width: 32px; height: 32px; border-radius: 50%; background: var(--gray-100); display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 600; color: var(--gray-600); flex-shrink: 0; }
+  .p-avatar.active { background: var(--brand-light); color: var(--brand-dark); }
+  .p-info { flex: 1; min-width: 0; }
+  .p-name { font-size: 13px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .p-sub { font-size: 11px; color: var(--gray-400); margin-top: 1px; }
+  .p-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--gray-200); flex-shrink: 0; }
+  .p-dot.on { background: var(--brand); }
+
+  .content { flex: 1; overflow: hidden; display: flex; flex-direction: column; }
+  .tab-content { display: none; flex: 1; overflow: hidden; }
+  .tab-content.active { display: flex; flex-direction: column; }
+  #map { flex: 1; }
+
+  .stats-bar { display: flex; gap: 0; border-bottom: 0.5px solid var(--gray-200); background: var(--white); flex-shrink: 0; }
+  .stat-item { flex: 1; padding: 10px 16px; border-right: 0.5px solid var(--gray-200); }
+  .stat-item:last-child { border-right: none; }
+  .stat-num { font-size: 20px; font-weight: 600; color: var(--gray-900); }
+  .stat-label { font-size: 11px; color: var(--gray-400); margin-top: 1px; }
+  .stat-num.green { color: var(--brand); }
+  .stat-num.amber { color: var(--amber); }
+
+  .tab-pad { padding: 20px; overflow-y: auto; flex: 1; }
+  .section-title { font-size: 13px; font-weight: 600; color: var(--gray-900); margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between; }
+  .table-wrap { background: var(--white); border-radius: var(--radius); border: 0.5px solid var(--gray-200); overflow: hidden; margin-bottom: 24px; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th { text-align: left; padding: 10px 14px; font-size: 11px; font-weight: 600; color: var(--gray-400); text-transform: uppercase; letter-spacing: 0.6px; background: var(--gray-50); border-bottom: 0.5px solid var(--gray-200); }
+  td { padding: 10px 14px; border-bottom: 0.5px solid var(--gray-100); vertical-align: middle; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: var(--gray-50); }
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 20px; font-size: 11px; font-weight: 500; }
+  .badge-green { background: var(--brand-light); color: var(--brand-dark); }
+  .badge-gray { background: var(--gray-100); color: var(--gray-600); }
+  .badge-amber { background: var(--amber-light); color: #633806; }
+  .badge-red { background: var(--danger-light); color: #791F1F; }
+
+  .modal-bg { position: fixed; inset: 0; background: rgba(0,0,0,0.35); display: none; align-items: center; justify-content: center; z-index: 500; }
+  .modal-bg.show { display: flex; }
+  .modal { background: var(--white); border-radius: 14px; padding: 28px; width: 460px; max-height: 90vh; overflow-y: auto; }
+  .modal h2 { font-size: 17px; font-weight: 600; margin-bottom: 16px; }
+  .modal-footer { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; }
+  .modal select { width: 100%; padding: 9px 12px; border: 1px solid var(--gray-200); border-radius: var(--radius); font-size: 14px; outline: none; margin-bottom: 12px; }
+  .modal input[type=text] { width: 100%; padding: 9px 12px; border: 1px solid var(--gray-200); border-radius: var(--radius); font-size: 14px; outline: none; margin-bottom: 12px; }
+  .modal-label { font-size: 12px; font-weight: 500; color: var(--gray-600); margin-bottom: 4px; }
+
+  .export-card { background: var(--white); border-radius: var(--radius); border: 0.5px solid var(--gray-200); padding: 20px; margin-bottom: 16px; }
+  .export-card h3 { font-size: 14px; font-weight: 600; margin-bottom: 6px; }
+  .export-card p { font-size: 13px; color: var(--gray-600); margin-bottom: 14px; line-height: 1.5; }
+  .export-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+  .step-list { font-size: 13px; color: var(--gray-600); line-height: 1.8; padding-left: 4px; }
+  .step-list li { margin-bottom: 4px; }
+  code { background: var(--gray-50); padding: 2px 6px; border-radius: 4px; font-size: 12px; }
+
+  .spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid rgba(255,255,255,0.4); border-top-color: white; border-radius: 50%; animation: spin 0.7s linear infinite; vertical-align: middle; margin-right: 5px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .toast-admin { position: fixed; bottom: 24px; right: 24px; background: var(--gray-900); color: var(--white); padding: 10px 18px; border-radius: 10px; font-size: 13px; transform: translateY(60px); transition: transform 0.3s; z-index: 600; }
+  .toast-admin.show { transform: translateY(0); }
+</style>
+</head>
+<body>
+
+<div id="login-overlay">
+  <div class="login-box">
+    <h1>Panel de administración</h1>
+    <p>Jumex Fragua · Solo acceso autorizado</p>
+    <div class="field"><label>Usuario</label><input type="text" id="login-user" placeholder="admin"></div>
+    <div class="field"><label>Contraseña</label><input type="password" id="login-pass" placeholder="••••••••"></div>
+    <div id="login-err">Credenciales incorrectas.</div>
+    <button class="btn btn-primary" style="margin-top:8px" onclick="doLogin()">Entrar</button>
+  </div>
+</div>
+
+<div id="app" style="display:none">
+  <div class="topbar">
+    <div class="topbar-logo">Jumex <span>Fragua</span> <span style="color:#ccc;margin:0 4px">|</span> <span style="font-size:12px;color:var(--gray-400)">Admin</span></div>
+    <button class="topbar-tab active" onclick="switchTab('mapa',this)">Mapa en vivo</button>
+    <button class="topbar-tab" onclick="switchTab('promotores',this)">Promotores</button>
+    <button class="topbar-tab" onclick="switchTab('tiendas',this)">Tiendas</button>
+    <button class="topbar-tab" onclick="switchTab('exportar',this)">Exportar / Limpiar</button>
+    <div class="topbar-spacer"></div>
+    <span class="live-badge"><span class="live-dot"></span>En vivo</span>
+  </div>
+
+  <div class="main-wrap">
+
+    <div class="sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-title">Promotores</div>
+        <div class="sidebar-search"><input type="text" placeholder="Buscar..." oninput="filterProms(this.value)"></div>
+      </div>
+      <div class="promotor-list" id="prom-list"></div>
+    </div>
+
+    <div class="content">
+
+      <div class="tab-content active" id="tab-mapa">
+        <div class="stats-bar">
+          <div class="stat-item"><div class="stat-num green" id="st-activos">0</div><div class="stat-label">Check-in hoy</div></div>
+          <div class="stat-item"><div class="stat-num" id="st-gps">0</div><div class="stat-label">Registros GPS hoy</div></div>
+          <div class="stat-item"><div class="stat-num amber" id="st-sin-checkin">0</div><div class="stat-label">Sin check-in hoy</div></div>
+          <div class="stat-item"><div class="stat-num" id="st-total">22</div><div class="stat-label">Promotores activos</div></div>
+        </div>
+        <div id="map"></div>
+      </div>
+
+      <div class="tab-content" id="tab-promotores">
+        <div class="tab-pad">
+          <div class="section-title">
+            Plantilla activa
+            <button class="btn btn-sm btn-success" onclick="showModalPromotor()">+ Nuevo promotor</button>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Nombre</th><th>No. Empleado</th><th>Región</th><th>Ruta</th><th>Estado hoy</th><th>Acciones</th></tr></thead>
+              <tbody id="tabla-promotores"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div class="tab-content" id="tab-tiendas">
+        <div class="tab-pad">
+          <div class="section-title">
+            Catálogo de tiendas
+            <button class="btn btn-sm btn-outline" onclick="document.getElementById('input-excel').click()">Importar Excel</button>
+            <input type="file" id="input-excel" accept=".xlsx,.xls" style="display:none" onchange="importarExcel(this)">
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>ID</th><th>Cadena</th><th>Tienda</th><th>Dirección</th><th>Ciudad</th><th>Zona</th></tr></thead>
+              <tbody id="tabla-tiendas"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div class="tab-content" id="tab-exportar">
+        <div class="tab-pad">
+          <div class="export-card">
+            <h3>Exportar registros de asistencia y GPS</h3>
+            <p>Descarga todos los registros del periodo en formato Excel (.xlsx) listo para conciliación con el cliente. Incluye timestamps de servidor y coordenadas de cada check-in y posición GPS.</p>
+            <div class="export-actions">
+              <button class="btn btn-success" onclick="exportarDatos()">Exportar todo lo disponible</button>
+            </div>
+          </div>
+          <div class="export-card" style="border-color: #f5c4b3;">
+            <h3 style="color:var(--danger)">Limpieza quincenal — proceso manual en Supabase</h3>
+            <p>Por seguridad, el borrado de registros <strong>no se puede hacer desde este panel</strong>. Esto protege la evidencia: nadie puede eliminar datos desde la app pública, ni siquiera con la contraseña de admin de esta página. Solo se puede borrar entrando directamente a tu cuenta de Supabase.</p>
+            <ol class="step-list">
+              <li>1. Exporta primero con el botón de arriba y confirma que el archivo se descargó bien</li>
+              <li>2. Entra a <code>supabase.com</code> → tu proyecto <code>JX_HYDROLIT</code></li>
+              <li>3. Ve a <strong>Table Editor</strong> → abre <code>checkins</code> o <code>gps_logs</code></li>
+              <li>4. Filtra por fecha si quieres revisar el rango exacto de la quincena</li>
+              <li>5. Selecciona las filas con el checkbox de la izquierda</li>
+              <li>6. Clic en <strong>Delete rows</strong> (botón rojo) y confirma</li>
+            </ol>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<div class="modal-bg" id="modal-promotor">
+  <div class="modal">
+    <h2>Nuevo promotor</h2>
+    <div class="modal-label">Nombre completo</div>
+    <input type="text" id="mp-nombre" placeholder="Nombre del promotor">
+    <div class="modal-label">Número de empleado</div>
+    <input type="text" id="mp-codigo" placeholder="Ej: 1023">
+    <div class="modal-label">Región</div>
+    <input type="text" id="mp-region" placeholder="Ej: Querétaro Centro">
+    <div class="modal-label">Ruta (opcional)</div>
+    <input type="text" id="mp-ruta" placeholder="Ej: Ruta 4">
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-promotor')">Cancelar</button>
+      <button class="btn btn-success" onclick="guardarPromotor()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast-admin" id="toast-admin"></div>
+
+<script>
+const SUPABASE_URL = 'https://cdswrgjxrltobsdwytzl.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNkc3dyZ2p4cmx0b2JzZHd5dHpsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExMjA2OTUsImV4cCI6MjA5NjY5NjY5NX0.EN1xP-Ku1x3LLNyNZjfzjq5N6yFmBnUFKwsd8_oPzrE';
+const ADMIN_USER = 'admin';
+const ADMIN_PASS = 'jumex2026';
+
+const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+let map, markers = {};
+let db = { promotores: [], tiendas: [], checkins: [], gps: [] };
+
+function doLogin() {
+  const u = document.getElementById('login-user').value.trim();
+  const p = document.getElementById('login-pass').value;
+  if (u === ADMIN_USER && p === ADMIN_PASS) {
+    document.getElementById('login-overlay').style.display = 'none';
+    document.getElementById('app').style.display = 'flex';
+    initApp();
+  } else {
+    document.getElementById('login-err').style.display = 'block';
+  }
+}
+document.getElementById('login-pass').addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
+
+async function initApp() {
+  initMap();
+  await loadAll();
+  renderAll();
+  subscribeRealtime();
+}
+
+function initMap() {
+  map = L.map('map', { zoomControl: true }).setView([20.5, -100.3], 6);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap', maxZoom: 19 }).addTo(map);
+}
+
+async function loadAll() {
+  const hoy = new Date().toISOString().slice(0,10);
+
+  const [prom, tien, chk, gps] = await Promise.all([
+    supabase.from('promotor').select('*').eq('activo', true),
+    supabase.from('tiendas').select('*').eq('activa', true),
+    supabase.from('checkins').select('*').gte('fecha', hoy),
+    supabase.from('gps_logs').select('*').gte('fecha', hoy).order('fecha', { ascending: false }),
+  ]);
+
+  db.promotores = prom.data || [];
+  db.tiendas    = tien.data || [];
+  db.checkins   = chk.data  || [];
+  db.gps        = gps.data  || [];
+}
+
+function subscribeRealtime() {
+  supabase.channel('gps_realtime')
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'gps_logs' }, payload => {
+      db.gps.unshift(payload.new);
+      renderMap();
+      renderStats();
+      renderSidebar();
+    })
+    .subscribe();
+
+  supabase.channel('checkins_realtime')
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'checkins' }, payload => {
+      db.checkins.push(payload.new);
+      renderStats();
+      renderSidebar();
+      renderTablaPromotores();
+    })
+    .subscribe();
+}
+
+function renderAll() {
+  renderSidebar();
+  renderMap();
+  renderStats();
+  renderTablaPromotores();
+  renderTablaTiendas();
+}
+
+function isHoy(iso) {
+  if (!iso) return false;
+  return iso.slice(0,10) === new Date().toISOString().slice(0,10);
+}
+
+function renderSidebar() {
+  const list = document.getElementById('prom-list');
+  list.innerHTML = db.promotores.map(p => {
+    const activo = db.checkins.some(c => c.codigo_promotor === p.numero_empleado && isHoy(c.fecha));
+    return `<div class="promotor-item" onclick="focusPromotor('${p.numero_empleado}')">
+      <div class="p-avatar ${activo?'active':''}">${initials(p.nombre_completo)}</div>
+      <div class="p-info">
+        <div class="p-name">${p.nombre_completo}</div>
+        <div class="p-sub">${p.ruta || 'Sin ruta'} · ${p.numero_empleado}</div>
+      </div>
+      <div class="p-dot ${activo?'on':''}"></div>
+    </div>`;
+  }).join('') || '<div style="padding:20px;font-size:13px;color:var(--gray-400)">Sin promotores registrados.</div>';
+}
+
+function filterProms(q) {
+  document.querySelectorAll('.promotor-item').forEach(el => {
+    el.style.display = el.textContent.toLowerCase().includes(q.toLowerCase()) ? '' : 'none';
+  });
+}
+
+function renderMap() {
+  Object.values(markers).forEach(m => map.removeLayer(m));
+  markers = {};
+
+  const tiendaIcon = L.divIcon({ className:'', html:`<div style="width:8px;height:8px;border-radius:2px;background:#EF9F27;border:1.5px solid white"></div>`, iconSize:[8,8], iconAnchor:[4,4] });
+  const promIcon   = L.divIcon({ className:'', html:`<div style="width:12px;height:12px;border-radius:50%;background:#1D9E75;border:2px solid white;box-shadow:0 1px 4px rgba(0,0,0,0.3)"></div>`, iconSize:[12,12], iconAnchor:[6,6] });
+
+  db.tiendas.forEach(t => {
+    const lat = parseFloat(t.lat), lng = parseFloat(t.lng);
+    if (!isNaN(lat) && !isNaN(lng)) {
+      L.marker([lat,lng], {icon:tiendaIcon}).addTo(map).bindPopup(`<b>${t.nombre_tienda||t.cadena}</b><br>${t.direccion||''}`);
+    }
+  });
+
+  const ultimasPos = {};
+  db.gps.filter(g => isHoy(g.fecha)).forEach(g => {
+    if (!ultimasPos[g.codigo_promotor] || g.fecha > ultimasPos[g.codigo_promotor].fecha) ultimasPos[g.codigo_promotor] = g;
+  });
+
+  Object.values(ultimasPos).forEach(g => {
+    const lat = parseFloat(g.lat), lng = parseFloat(g.lng);
+    if (!isNaN(lat) && !isNaN(lng)) {
+      const p = db.promotores.find(x => x.numero_empleado === g.codigo_promotor);
+      const nombre = p?.nombre_completo || g.codigo_promotor;
+      const bat = g.bateria != null ? ` · 🔋${g.bateria}%` : '';
+      const m = L.marker([lat,lng], {icon:promIcon}).addTo(map)
+        .bindPopup(`<b>${nombre}</b><br>${g.codigo_promotor}<br>${new Date(g.fecha).toLocaleTimeString('es-MX')}${bat}`);
+      markers[g.codigo_promotor] = m;
+    }
+  });
+}
+
+function focusPromotor(codigo) {
+  if (markers[codigo]) {
+    document.querySelector('.topbar-tab').click();
+    map.setView(markers[codigo].getLatLng(), 15);
+    markers[codigo].openPopup();
+  }
+}
+
+function renderStats() {
+  const checkinsHoy = db.checkins.filter(c => isHoy(c.fecha));
+  const gpsHoy = db.gps.filter(g => isHoy(g.fecha));
+  document.getElementById('st-activos').textContent = checkinsHoy.length;
+  document.getElementById('st-gps').textContent = gpsHoy.length;
+  document.getElementById('st-sin-checkin').textContent = Math.max(0, db.promotores.length - checkinsHoy.length);
+  document.getElementById('st-total').textContent = db.promotores.length;
+}
+
+function renderTablaPromotores() {
+  const tbody = document.getElementById('tabla-promotores');
+  tbody.innerHTML = db.promotores.map(p => {
+    const checkin = db.checkins.find(c => c.codigo_promotor === p.numero_empleado && isHoy(c.fecha));
+    const estado = checkin
+      ? `<span class="badge badge-green">Check-in ${new Date(checkin.fecha).toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'})}</span>`
+      : `<span class="badge badge-gray">Sin check-in</span>`;
+    return `<tr>
+      <td><b>${p.nombre_completo}</b></td>
+      <td><span style="font-family:monospace">${p.numero_empleado}</span></td>
+      <td>${p.region || '—'}</td>
+      <td>${p.ruta || '<span style="color:var(--gray-400)">Sin asignar</span>'}</td>
+      <td>${estado}</td>
+      <td><button class="btn btn-sm btn-outline" style="color:var(--danger);border-color:#f5c4b3" onclick="bajaPromotor(${p.id})">Baja</button></td>
+    </tr>`;
+  }).join('') || `<tr><td colspan="6" style="text-align:center;color:var(--gray-400);padding:20px">Sin promotores. Agrega el primero.</td></tr>`;
+}
+
+function renderTablaTiendas() {
+  const tbody = document.getElementById('tabla-tiendas');
+  const muestra = db.tiendas.slice(0,200);
+  tbody.innerHTML = muestra.map(t => `<tr>
+      <td style="font-family:monospace;font-size:11px">${t.id_tienda||'—'}</td>
+      <td>${t.cadena||'—'}</td>
+      <td>${t.nombre_tienda||'—'}</td>
+      <td style="color:var(--gray-400)">${t.direccion||'—'}</td>
+      <td>${t.ciudad||'—'}</td>
+      <td><span class="badge badge-gray">${t.zona||'—'}</span></td>
+    </tr>`).join('') + (db.tiendas.length > 200 ? `<tr><td colspan="6" style="text-align:center;color:var(--gray-400);padding:10px">... y ${db.tiendas.length-200} más</td></tr>` : '');
+}
+
+function showModalPromotor() { openModal('modal-promotor'); }
+
+async function guardarPromotor() {
+  const nombre_completo = document.getElementById('mp-nombre').value.trim();
+  const numero_empleado = document.getElementById('mp-codigo').value.trim();
+  const region = document.getElementById('mp-region').value.trim();
+  const ruta = document.getElementById('mp-ruta').value.trim();
+  if (!nombre_completo || !numero_empleado) { showToast('Completa nombre y número de empleado.'); return; }
+
+  const { error } = await supabase.from('promotor').insert({ nombre_completo, numero_empleado, region, ruta, activo: true });
+  if (error) { showToast('Error: ' + error.message); return; }
+
+  closeModal('modal-promotor');
+  document.getElementById('mp-nombre').value = '';
+  document.getElementById('mp-codigo').value = '';
+  document.getElementById('mp-region').value = '';
+  document.getElementById('mp-ruta').value = '';
+  await loadAll();
+  renderAll();
+  showToast(`Promotor ${nombre_completo} agregado.`);
+}
+
+async function bajaPromotor(id) {
+  if (!confirm('¿Dar de baja este promotor?')) return;
+  const { error } = await supabase.from('promotor').update({ activo: false }).eq('id', id);
+  if (error) { showToast('Error: ' + error.message); return; }
+  await loadAll();
+  renderAll();
+  showToast('Promotor dado de baja.');
+}
+
+async function importarExcel(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const data = await file.arrayBuffer();
+  const wb = XLSX.read(data);
+  const ws = wb.Sheets[wb.SheetNames[0]];
+  const rows = XLSX.utils.sheet_to_json(ws);
+
+  const tiendas = rows.map(r => ({
+    id_tienda:     String(r['ID Frog'] || r['id_tienda'] || r['ID'] || ''),
+    nombre_tienda: r['Razon Social'] || r['nombre_tienda'] || r['Nombre'] || '',
+    cadena:        r['Cadena'] || r['cadena'] || 'Farmacia Guadalajara SUC',
+    direccion:     [r['Calle'], r['Colonia']].filter(Boolean).join(', ') || 'Sin dirección',
+    ciudad:        r['Ciudad'] || r['ciudad'] || '',
+    estado:        r['Estado'] || r['estado'] || '',
+    zona:          r['Zona'] || r['Ruta'] || r['zona'] || '',
+    lat:           parseFloat(r['Coordenada Y'] || r['lat'] || r['Latitud']),
+    lng:           parseFloat(r['Coordenada X'] || r['lng'] || r['Longitud']),
+    activa:        true,
+  })).filter(t => t.nombre_tienda && !isNaN(t.lat) && !isNaN(t.lng));
+
+  if (tiendas.length === 0) { showToast('No se encontraron filas válidas con coordenadas.'); return; }
+
+  const { error } = await supabase.from('tiendas').insert(tiendas);
+  if (error) { showToast('Error al importar: ' + error.message); return; }
+
+  await loadAll();
+  renderAll();
+  showToast(`${tiendas.length} tiendas importadas correctamente.`);
+  input.value = '';
+}
+
+function exportarDatos() {
+  const wb = XLSX.utils.book_new();
+
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(db.checkins.map(c=>({
+    'Código': c.codigo_promotor, 'Nombre': c.nombre_promotor,
+    'Fecha': c.fecha?.slice(0,10), 'Hora': formatHora(c.fecha),
+    'Latitud': c.lat, 'Longitud': c.lng,
+  }))), 'Check-ins');
+
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(db.gps.map(g=>({
+    'Código': g.codigo_promotor, 'Fecha': g.fecha?.slice(0,10), 'Hora': formatHora(g.fecha),
+    'Latitud': g.lat, 'Longitud': g.lng, 'Precisión(m)': g.precision, 'Batería(%)': g.bateria,
+  }))), 'Registros GPS');
+
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(db.promotores.map(p=>({
+    'Nombre': p.nombre_completo, 'No. Empleado': p.numero_empleado, 'Región': p.region, 'Ruta': p.ruta,
+  }))), 'Promotores');
+
+  const fecha = new Date().toISOString().slice(0,10);
+  XLSX.writeFile(wb, `JumexFragua_${fecha}.xlsx`);
+  showToast('Archivo descargado correctamente.');
+}
+
+function switchTab(id, btn) {
+  document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.topbar-tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById(`tab-${id}`).classList.add('active');
+  if (btn) btn.classList.add('active');
+  if (id === 'mapa') setTimeout(()=>map.invalidateSize(), 50);
+}
+
+function openModal(id)  { document.getElementById(id).classList.add('show'); }
+function closeModal(id) { document.getElementById(id).classList.remove('show'); }
+
+function showToast(msg) {
+  const t = document.getElementById('toast-admin');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 2800);
+}
+
+function initials(nombre) { return (nombre||'').trim().split(' ').slice(0,2).map(w=>w[0]||'').join('').toUpperCase(); }
+function formatHora(iso) { return iso ? new Date(iso).toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit',second:'2-digit'}) : '—'; }
+</script>
+</body>
+</html>

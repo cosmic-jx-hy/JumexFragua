@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Promotor — Jumex Fragua</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root {
+    --brand: #1D9E75;
+    --brand-dark: #0F6E56;
+    --brand-light: #E1F5EE;
+    --danger: #E24B4A;
+    --danger-light: #FCEBEB;
+    --amber: #EF9F27;
+    --amber-light: #FAEEDA;
+    --gray-50: #F1EFE8;
+    --gray-200: #B4B2A9;
+    --gray-400: #888780;
+    --gray-600: #5F5E5A;
+    --gray-900: #2C2C2A;
+    --white: #ffffff;
+    --radius: 14px;
+    --radius-sm: 8px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: var(--gray-50);
+    color: var(--gray-900);
+    min-height: 100vh;
+    max-width: 430px;
+    margin: 0 auto;
+  }
+
+  .screen { display: none; min-height: 100vh; flex-direction: column; }
+  .screen.active { display: flex; }
+
+  .header {
+    background: var(--white);
+    padding: 16px 20px 12px;
+    border-bottom: 0.5px solid #e0e0e0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+  .header-logo { font-size: 15px; font-weight: 600; color: var(--brand-dark); letter-spacing: -0.3px; }
+  .header-logo span { color: var(--gray-400); font-weight: 400; }
+  .status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--gray-200); display: inline-block; margin-right: 6px; }
+  .status-dot.active { background: var(--brand); animation: pulse 2s infinite; }
+  .status-dot.offline { background: var(--amber); animation: pulse 1s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+  .header-status { font-size: 12px; color: var(--gray-600); display: flex; align-items: center; }
+
+  .login-wrap { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 32px 24px; gap: 24px; }
+  .login-brand { text-align: center; }
+  .login-brand .logo-icon { width: 72px; height: 72px; background: var(--brand-light); border-radius: 20px; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px; }
+  .login-brand .logo-icon svg { width: 36px; height: 36px; }
+  .login-brand h1 { font-size: 22px; font-weight: 600; color: var(--gray-900); margin-bottom: 4px; }
+  .login-brand p { font-size: 14px; color: var(--gray-600); }
+  .login-form { width: 100%; display: flex; flex-direction: column; gap: 12px; }
+  .input-group { display: flex; flex-direction: column; gap: 6px; }
+  .input-group label { font-size: 13px; font-weight: 500; color: var(--gray-600); }
+  .input-group input { width: 100%; padding: 14px 16px; border: 1px solid #ddd; border-radius: var(--radius-sm); font-size: 16px; background: var(--white); color: var(--gray-900); outline: none; }
+  .input-group input:focus { border-color: var(--brand); }
+
+  .btn { width: 100%; padding: 16px; border: none; border-radius: var(--radius-sm); font-size: 16px; font-weight: 600; cursor: pointer; transition: opacity 0.15s, transform 0.1s; }
+  .btn:active { transform: scale(0.98); opacity: 0.9; }
+  .btn-primary { background: var(--brand); color: var(--white); }
+  .btn-primary:disabled { background: var(--gray-200); color: var(--gray-400); }
+
+  .main-content { flex: 1; padding: 16px; display: flex; flex-direction: column; gap: 12px; overflow-y: auto; }
+
+  .card { background: var(--white); border-radius: var(--radius); padding: 16px; border: 0.5px solid #e8e8e8; }
+  .card-label { font-size: 11px; font-weight: 600; color: var(--gray-400); text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 8px; }
+
+  .promotor-info { display: flex; align-items: center; gap: 12px; }
+  .avatar { width: 48px; height: 48px; border-radius: 50%; background: var(--brand-light); display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 16px; color: var(--brand-dark); flex-shrink: 0; }
+  .promotor-name { font-size: 16px; font-weight: 600; color: var(--gray-900); }
+  .promotor-meta { font-size: 13px; color: var(--gray-600); margin-top: 2px; }
+
+  .checkin-card { background: var(--brand); border-radius: var(--radius); padding: 20px; color: var(--white); text-align: center; }
+  .checkin-card.done { background: var(--brand-dark); }
+  .checkin-card.finished { background: var(--gray-600); }
+  .checkin-time { font-size: 36px; font-weight: 700; letter-spacing: -1px; font-variant-numeric: tabular-nums; }
+  .checkin-date { font-size: 13px; opacity: 0.8; margin-top: 2px; margin-bottom: 16px; }
+  .checkin-badge { display: inline-flex; align-items: center; gap: 6px; background: rgba(255,255,255,0.2); border-radius: 20px; padding: 6px 14px; font-size: 13px; font-weight: 500; }
+  .btn-checkin { width: 100%; padding: 14px; border: none; border-radius: var(--radius-sm); font-size: 15px; font-weight: 600; cursor: pointer; background: rgba(255,255,255,0.25); color: var(--white); margin-top: 14px; transition: background 0.15s; }
+  .btn-checkin:hover { background: rgba(255,255,255,0.35); }
+  .btn-checkin:disabled { opacity: 0.5; }
+
+  .gps-row { display: flex; justify-content: space-between; align-items: center; }
+  .gps-val { font-size: 13px; color: var(--gray-600); font-variant-numeric: tabular-nums; }
+  .gps-label { font-size: 11px; color: var(--gray-400); }
+
+  .alert { border-radius: var(--radius-sm); padding: 12px 14px; font-size: 13px; display: flex; align-items: flex-start; gap: 8px; display: none; }
+  .alert.show { display: flex; }
+  .alert-warn { background: var(--amber-light); color: #633806; }
+  .alert-info { background: var(--brand-light); color: var(--brand-dark); }
+  .alert-danger { background: var(--danger-light); color: #791F1F; }
+  .alert-icon { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
+
+  .queue-badge { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--amber); font-weight: 500; }
+
+  .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(80px); background: var(--gray-900); color: var(--white); padding: 10px 20px; border-radius: 20px; font-size: 13px; font-weight: 500; transition: transform 0.3s ease; z-index: 100; white-space: nowrap; max-width: 90%; text-overflow: ellipsis; overflow: hidden; }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+
+  .spinner { display: inline-block; width: 16px; height: 16px; border: 2px solid rgba(255,255,255,0.4); border-top-color: white; border-radius: 50%; animation: spin 0.7s linear infinite; vertical-align: middle; margin-right: 6px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .spacer { flex: 1; }
+  .bottom-safe { height: env(safe-area-inset-bottom, 12px); }
+</style>
+</head>
+<body>
+
+<!-- LOGIN SCREEN -->
+<div class="screen active" id="screen-login">
+  <div class="login-wrap">
+    <div class="login-brand">
+      <div class="logo-icon">
+        <svg viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="18" cy="18" r="14" fill="#1D9E75" opacity="0.15"/>
+          <path d="M18 8 L22 14 L29 15.5 L24 21 L25 28 L18 24.5 L11 28 L12 21 L7 15.5 L14 14 Z" fill="#1D9E75"/>
+        </svg>
+      </div>
+      <h1>Jumex Fragua</h1>
+      <p>Registro de asistencia</p>
+    </div>
+    <div class="login-form">
+      <div class="input-group">
+        <label>Tu número de empleado</label>
+        <input type="text" id="input-codigo" placeholder="Ej: 1023" autocomplete="off">
+      </div>
+      <div class="input-group">
+        <label>Tu nombre</label>
+        <input type="text" id="input-nombre" placeholder="Nombre completo" autocomplete="name">
+      </div>
+      <div id="alert-login" class="alert alert-danger">
+        <span class="alert-icon">⚠</span>
+        <span id="alert-login-msg">No encontramos tu número de empleado. Verifica con tu supervisor.</span>
+      </div>
+      <button class="btn btn-primary" id="btn-entrar" onclick="handleLogin()">Entrar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MAIN SCREEN -->
+<div class="screen" id="screen-main">
+  <div class="header">
+    <div class="header-logo">Jumex <span>Fragua</span></div>
+    <div class="header-status">
+      <span class="status-dot" id="dot-gps"></span>
+      <span id="txt-gps-status">Sin GPS</span>
+    </div>
+  </div>
+
+  <div class="main-content">
+
+    <div class="card">
+      <div class="promotor-info">
+        <div class="avatar" id="avatar-initials">--</div>
+        <div>
+          <div class="promotor-name" id="txt-nombre">—</div>
+          <div class="promotor-meta" id="txt-meta">—</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="checkin-card" id="card-checkin">
+      <div class="checkin-time" id="txt-hora">--:--:--</div>
+      <div class="checkin-date" id="txt-fecha">--</div>
+      <div class="checkin-badge" id="badge-estado">
+        <span id="txt-estado-icon">○</span>
+        <span id="txt-estado">Jornada no iniciada</span>
+      </div>
+      <button class="btn-checkin" id="btn-checkin" onclick="handleCheckin()">
+        Iniciar jornada
+      </button>
+    </div>
+
+    <div class="alert alert-warn" id="alert-gps">
+      <span class="alert-icon">⚠</span>
+      <span>GPS sin señal por más de 10 min. Si tu ubicación cambió, abre la app de nuevo.</span>
+    </div>
+
+    <div class="alert alert-info" id="alert-queue">
+      <span class="alert-icon">📡</span>
+      <span><span class="queue-badge" id="txt-queue-count">0 registros</span> esperando conexión. Se enviarán automáticamente.</span>
+    </div>
+
+    <div class="card">
+      <div class="card-label">Ubicación actual</div>
+      <div class="gps-row">
+        <div>
+          <div class="gps-label">Latitud</div>
+          <div class="gps-val" id="txt-lat">—</div>
+        </div>
+        <div>
+          <div class="gps-label">Longitud</div>
+          <div class="gps-val" id="txt-lng">—</div>
+        </div>
+        <div>
+          <div class="gps-label">Precisión</div>
+          <div class="gps-val" id="txt-acc">—</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="spacer"></div>
+    <div class="bottom-safe"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ============================================================
+//  CONFIGURACIÓN SUPABASE
+// ============================================================
+const SUPABASE_URL = 'https://cdswrgjxrltobsdwytzl.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNkc3dyZ2p4cmx0b2JzZHd5dHpsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExMjA2OTUsImV4cCI6MjA5NjY5NjY5NX0.EN1xP-Ku1x3LLNyNZjfzjq5N6yFmBnUFKwsd8_oPzrE';
+
+const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+const GPS_INTERVAL_MS = 5 * 60 * 1000;
+const GPS_TIMEOUT_MS  = 10 * 60 * 1000;
+const QUEUE_RETRY_MS  = 30 * 1000;
+const JORNADA_FIN_H   = 17; // 5pm
+
+let state = {
+  promotor: null,
+  checkinDone: false,
+  checkinTime: null,
+  jornadaFinalizada: false,
+  posActual: null,
+  gpsLastSeenAt: null,
+  gpsTimeoutId: null,
+};
+
+// ============================================================
+//  SESIÓN LOCAL (sobrevive cerrar pestaña / apagar celular)
+// ============================================================
+function initFromStorage() {
+  const saved = localStorage.getItem('jf_session');
+  if (!saved) return false;
+  try {
+    const s = JSON.parse(saved);
+    const today = new Date().toISOString().slice(0,10);
+    if (s.fecha !== today) { localStorage.removeItem('jf_session'); return false; }
+    state.promotor          = s.promotor;
+    state.checkinDone       = s.checkinDone;
+    state.checkinTime       = s.checkinTime;
+    state.jornadaFinalizada = s.jornadaFinalizada || false;
+    return true;
+  } catch(e) { return false; }
+}
+
+function saveSession() {
+  localStorage.setItem('jf_session', JSON.stringify({
+    fecha: new Date().toISOString().slice(0,10),
+    promotor: state.promotor,
+    checkinDone: state.checkinDone,
+    checkinTime: state.checkinTime,
+    jornadaFinalizada: state.jornadaFinalizada,
+  }));
+}
+
+// ============================================================
+//  COLA OFFLINE
+// ============================================================
+function getQueue() {
+  try { return JSON.parse(localStorage.getItem('jf_queue') || '[]'); }
+  catch(e) { return []; }
+}
+function saveQueue(q) { localStorage.setItem('jf_queue', JSON.stringify(q)); }
+function pushToQueue(item) {
+  const q = getQueue();
+  q.push(item);
+  saveQueue(q);
+  renderQueueBadge();
+}
+function renderQueueBadge() {
+  const q = getQueue();
+  const el = document.getElementById('alert-queue');
+  if (q.length > 0) {
+    document.getElementById('txt-queue-count').textContent = `${q.length} registro${q.length>1?'s':''}`;
+    el.classList.add('show');
+  } else {
+    el.classList.remove('show');
+  }
+}
+
+async function flushQueue() {
+  const q = getQueue();
+  if (q.length === 0) return;
+
+  const remaining = [];
+  for (const item of q) {
+    try {
+      const { error } = await supabase.from(item.table).insert(item.payload);
+      if (error) remaining.push(item);
+    } catch(e) {
+      remaining.push(item);
+    }
+  }
+  saveQueue(remaining);
+  renderQueueBadge();
+  if (remaining.length < q.length) {
+    showToast(`${q.length - remaining.length} registro(s) sincronizados`);
+  }
+}
+
+setInterval(flushQueue, QUEUE_RETRY_MS);
+window.addEventListener('online', flushQueue);
+
+// ============================================================
+//  INSERTAR CON RESPALDO A COLA SI FALLA
+// ============================================================
+async function insertConRespaldo(table, payload) {
+  try {
+    const { error } = await supabase.from(table).insert(payload);
+    if (error) throw error;
+    return true;
+  } catch(e) {
+    pushToQueue({ table, payload });
+    return false;
+  }
+}
+
+// ============================================================
+//  UI HELPERS
+// ============================================================
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+function showToast(msg, dur=2500) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), dur);
+}
+function getInitials(nombre) {
+  return nombre.trim().split(' ').slice(0,2).map(w=>w[0]).join('').toUpperCase();
+}
+function showAlert(id, msg) {
+  const el = document.getElementById(`alert-${id}`);
+  const msgEl = document.getElementById(`alert-${id}-msg`);
+  if (msgEl) msgEl.textContent = msg;
+  el.classList.add('show');
+}
+function hideAlert(id) { document.getElementById(`alert-${id}`)?.classList.remove('show'); }
+
+function renderMain() {
+  const p = state.promotor;
+  document.getElementById('txt-nombre').textContent = p.nombre_completo;
+  document.getElementById('avatar-initials').textContent = getInitials(p.nombre_completo);
+  document.getElementById('txt-meta').textContent = `Empleado: ${p.numero_empleado} · Región: ${p.region || '—'}`;
+
+  const card = document.getElementById('card-checkin');
+  const btn  = document.getElementById('btn-checkin');
+
+  if (state.jornadaFinalizada) {
+    card.classList.remove('done');
+    card.classList.add('finished');
+    document.getElementById('badge-estado').innerHTML = `<span>✓</span><span>Jornada finalizada</span>`;
+    btn.style.display = 'none';
+  } else if (state.checkinDone) {
+    card.classList.add('done');
+    const hora = new Date(state.checkinTime).toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'});
+    document.getElementById('badge-estado').innerHTML = `<span>✓</span><span>Jornada activa desde ${hora}</span>`;
+    btn.style.display = 'none';
+  }
+}
+
+// ============================================================
+//  LOGIN — valida contra tabla "promotor"
+// ============================================================
+async function handleLogin() {
+  const codigo = document.getElementById('input-codigo').value.trim();
+  const nombre = document.getElementById('input-nombre').value.trim();
+  if (!codigo || !nombre) { showAlert('login','Ingresa tu número de empleado y nombre.'); return; }
+
+  const btn = document.getElementById('btn-entrar');
+  btn.innerHTML = '<span class="spinner"></span>Verificando...';
+  btn.disabled = true;
+
+  try {
+    const { data, error } = await supabase
+      .from('promotor')
+      .select('*')
+      .eq('numero_empleado', codigo)
+      .eq('activo', true)
+      .limit(1);
+
+    if (error) throw error;
+
+    if (data && data.length > 0) {
+      state.promotor = data[0];
+      hideAlert('login');
+      showScreen('screen-main');
+      renderMain();
+      startClock();
+      startGPS();
+      flushQueue();
+    } else {
+      showAlert('login', 'No encontramos tu número de empleado activo. Verifica con tu supervisor.');
+    }
+  } catch(e) {
+    showAlert('login','Sin conexión o error de red. Intenta de nuevo.');
+  }
+  btn.innerHTML = 'Entrar';
+  btn.disabled = false;
+}
+
+// ============================================================
+//  CHECK-IN ÚNICO
+// ============================================================
+async function handleCheckin() {
+  if (state.checkinDone) return;
+  if (!state.posActual) { showToast('Esperando señal GPS...'); return; }
+
+  const btn = document.getElementById('btn-checkin');
+  btn.innerHTML = '<span class="spinner"></span>Registrando...';
+  btn.disabled = true;
+
+  const now = new Date();
+  const payload = {
+    codigo_promotor: state.promotor.numero_empleado,
+    nombre_promotor: state.promotor.nombre_completo,
+    fecha: now.toISOString(),
+    lat: state.posActual.lat,
+    lng: state.posActual.lng,
+  };
+
+  await insertConRespaldo('checkins', payload);
+
+  state.checkinDone = true;
+  state.checkinTime = now.toISOString();
+  saveSession();
+  renderMain();
+  showToast('¡Jornada iniciada!');
+  scheduleAutoCheckout();
+}
+
+// ============================================================
+//  RELOJ
+// ============================================================
+function startClock() {
+  function tick() {
+    const now = new Date();
+    document.getElementById('txt-hora').textContent = now.toLocaleTimeString('es-MX');
+    document.getElementById('txt-fecha').textContent = now.toLocaleDateString('es-MX',{weekday:'long',day:'numeric',month:'long'});
+  }
+  tick();
+  setInterval(tick, 1000);
+}
+
+// ============================================================
+//  GPS — cada 5 min mientras la jornada esté activa (8am-5pm)
+// ============================================================
+function startGPS() {
+  if (!navigator.geolocation) {
+    document.getElementById('txt-gps-status').textContent = 'GPS no disponible';
+    return;
+  }
+
+  function onPos(pos) {
+    const { latitude: lat, longitude: lng, accuracy: acc } = pos.coords;
+    state.posActual = { lat, lng, acc };
+    state.gpsLastSeenAt = Date.now();
+
+    const dot = document.getElementById('dot-gps');
+    dot.classList.remove('offline');
+    dot.classList.add('active');
+    document.getElementById('txt-gps-status').textContent = navigator.onLine ? 'GPS activo' : 'GPS activo (sin internet)';
+    document.getElementById('txt-lat').textContent = lat.toFixed(5);
+    document.getElementById('txt-lng').textContent = lng.toFixed(5);
+    document.getElementById('txt-acc').textContent = `±${Math.round(acc)}m`;
+    document.getElementById('alert-gps').classList.remove('show');
+
+    if (state.gpsTimeoutId) clearTimeout(state.gpsTimeoutId);
+    state.gpsTimeoutId = setTimeout(onGPSLost, GPS_TIMEOUT_MS);
+  }
+
+  function onErr() {
+    document.getElementById('dot-gps').classList.remove('active');
+    document.getElementById('txt-gps-status').textContent = 'Sin GPS';
+    if (state.gpsLastSeenAt && Date.now() - state.gpsLastSeenAt > GPS_TIMEOUT_MS) onGPSLost();
+  }
+
+  navigator.geolocation.watchPosition(onPos, onErr, { enableHighAccuracy: true, maximumAge: 30000, timeout: 20000 });
+
+  setInterval(() => {
+    if (state.posActual && state.checkinDone && !state.jornadaFinalizada && dentroDeJornada()) {
+      sendGPS(state.posActual.lat, state.posActual.lng, state.posActual.acc);
+    }
+  }, GPS_INTERVAL_MS);
+}
+
+function dentroDeJornada() {
+  const h = new Date().getHours();
+  return h >= 8 && h < JORNADA_FIN_H;
+}
+
+function onGPSLost() {
+  document.getElementById('dot-gps').classList.remove('active');
+  document.getElementById('dot-gps').classList.add('offline');
+  document.getElementById('alert-gps').classList.add('show');
+}
+
+async function sendGPS(lat, lng, acc) {
+  const payload = {
+    codigo_promotor: state.promotor.numero_empleado,
+    fecha: new Date().toISOString(),
+    lat, lng,
+    precision: acc,
+    bateria: await getBatteryLevel(),
+  };
+  await insertConRespaldo('gps_logs', payload);
+}
+
+async function getBatteryLevel() {
+  try {
+    if (navigator.getBattery) {
+      const b = await navigator.getBattery();
+      return Math.round(b.level * 100);
+    }
+  } catch(e) {}
+  return null;
+}
+
+// ============================================================
+//  CHECKOUT AUTOMÁTICO A LAS 5PM
+// ============================================================
+function scheduleAutoCheckout() {
+  const ahora = new Date();
+  const finHoy = new Date(); finHoy.setHours(JORNADA_FIN_H,0,0,0);
+  const msHasta = finHoy - ahora;
+  if (msHasta > 0 && !state.jornadaFinalizada) {
+    setTimeout(() => {
+      state.jornadaFinalizada = true;
+      saveSession();
+      renderMain();
+      showToast('Jornada finalizada automáticamente a las 5:00 pm', 4000);
+    }, msHasta);
+  } else if (msHasta <= 0) {
+    state.jornadaFinalizada = true;
+    saveSession();
+  }
+}
+
+// ============================================================
+//  INICIO
+// ============================================================
+window.addEventListener('load', () => {
+  renderQueueBadge();
+  if (initFromStorage()) {
+    showScreen('screen-main');
+    renderMain();
+    startClock();
+    startGPS();
+    flushQueue();
+    if (state.checkinDone && !state.jornadaFinalizada) scheduleAutoCheckout();
+  }
+});
+</script>
+</body>
+</html>
