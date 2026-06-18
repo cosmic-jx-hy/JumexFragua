@@ -475,16 +475,28 @@ async function importarExcel(input) {
   const ws = wb.Sheets[wb.SheetNames[0]];
   const rows = XLSX.utils.sheet_to_json(ws);
 
+  // Normalizar encabezados a minúsculas para manejar LAT/lat/Lat etc.
+  const normalize = (r, ...keys) => {
+    for (const k of keys) {
+      if (r[k] !== undefined && r[k] !== null && r[k] !== '') return r[k];
+      const kl = k.toLowerCase();
+      const ku = k.toUpperCase();
+      if (r[kl] !== undefined && r[kl] !== null && r[kl] !== '') return r[kl];
+      if (r[ku] !== undefined && r[ku] !== null && r[ku] !== '') return r[ku];
+    }
+    return '';
+  };
+
   const tiendas = rows.map(r => ({
-    id_tienda:     String(r['ID Frog'] || r['id_tienda'] || r['ID'] || ''),
-    nombre_tienda: r['Razon Social'] || r['nombre_tienda'] || r['Nombre'] || '',
-    cadena:        r['Cadena'] || r['cadena'] || 'Farmacia Guadalajara SUC',
-    direccion:     [r['Calle'], r['Colonia']].filter(Boolean).join(', ') || 'Sin dirección',
-    ciudad:        r['Ciudad'] || r['ciudad'] || '',
-    estado:        r['Estado'] || r['estado'] || '',
-    zona:          r['Zona'] || r['Ruta'] || r['zona'] || '',
-    lat:           parseFloat(r['Coordenada Y'] || r['lat'] || r['Latitud']),
-    lng:           parseFloat(r['Coordenada X'] || r['lng'] || r['Longitud']),
+    id_tienda:     String(normalize(r, 'ID Tienda', 'ID TIENDA', 'id_tienda', 'ID Frog', 'ID FROG', 'ID') || ''),
+    nombre_tienda: normalize(r, 'NOMBRE TIENDA', 'Nombre Tienda', 'nombre_tienda', 'Razon Social', 'RAZON SOCIAL', 'Nombre'),
+    cadena:        normalize(r, 'CADENA', 'Cadena', 'cadena') || 'Farmacia Guadalajara',
+    direccion:     normalize(r, 'direccion', 'DIRECCION', 'Direccion', 'Dirección', 'DIRECCIÓN') || [r['Calle'], r['Colonia']].filter(Boolean).join(', ') || 'Sin dirección',
+    ciudad:        normalize(r, 'CIUDAD', 'Ciudad', 'ciudad'),
+    estado:        normalize(r, 'ESTADO', 'Estado', 'estado'),
+    zona:          normalize(r, 'ZONA', 'Zona', 'zona', 'RUTA', 'Ruta'),
+    lat:           parseFloat(normalize(r, 'LAT', 'Lat', 'lat', 'LATITUD', 'Latitud', 'Coordenada Y')),
+    lng:           parseFloat(normalize(r, 'LNG', 'Lng', 'lng', 'LONGITUD', 'Longitud', 'Coordenada X')),
     activa:        true,
   })).filter(t => t.nombre_tienda && !isNaN(t.lat) && !isNaN(t.lng));
 
