@@ -251,7 +251,7 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 const ADMIN_USER = 'admin';
 const ADMIN_PASS = 'jumex2026';
 
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 let map, markers = {};
 let db = { promotores: [], tiendas: [], checkins: [], gps: [] };
@@ -285,10 +285,10 @@ async function loadAll() {
   const hoy = new Date().toISOString().slice(0,10);
 
   const [prom, tien, chk, gps] = await Promise.all([
-    supabase.from('promotor').select('*').eq('activo', true),
-    supabase.from('tiendas').select('*').eq('activa', true),
-    supabase.from('checkins').select('*').gte('fecha', hoy),
-    supabase.from('gps_logs').select('*').gte('fecha', hoy).order('fecha', { ascending: false }),
+    sb.from('promotor').select('*').eq('activo', true),
+    sb.from('tiendas').select('*').eq('activa', true),
+    sb.from('checkins').select('*').gte('fecha', hoy),
+    sb.from('gps_logs').select('*').gte('fecha', hoy).order('fecha', { ascending: false }),
   ]);
 
   db.promotores = prom.data || [];
@@ -298,7 +298,7 @@ async function loadAll() {
 }
 
 function subscribeRealtime() {
-  supabase.channel('gps_realtime')
+  sb.channel('gps_realtime')
     .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'gps_logs' }, payload => {
       db.gps.unshift(payload.new);
       renderMap();
@@ -307,7 +307,7 @@ function subscribeRealtime() {
     })
     .subscribe();
 
-  supabase.channel('checkins_realtime')
+  sb.channel('checkins_realtime')
     .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'checkins' }, payload => {
       db.checkins.push(payload.new);
       renderStats();
@@ -440,7 +440,7 @@ async function guardarPromotor() {
   const ruta = document.getElementById('mp-ruta').value.trim();
   if (!nombre_completo || !numero_empleado) { showToast('Completa nombre y número de empleado.'); return; }
 
-  const { error } = await supabase.from('promotor').insert({ nombre_completo, numero_empleado, region, ruta, activo: true });
+  const { error } = await sb.from('promotor').insert({ nombre_completo, numero_empleado, region, ruta, activo: true });
   if (error) { showToast('Error: ' + error.message); return; }
 
   closeModal('modal-promotor');
@@ -455,7 +455,7 @@ async function guardarPromotor() {
 
 async function bajaPromotor(id) {
   if (!confirm('¿Dar de baja este promotor?')) return;
-  const { error } = await supabase.from('promotor').update({ activo: false }).eq('id', id);
+  const { error } = await sb.from('promotor').update({ activo: false }).eq('id', id);
   if (error) { showToast('Error: ' + error.message); return; }
   await loadAll();
   renderAll();
@@ -485,7 +485,7 @@ async function importarExcel(input) {
 
   if (tiendas.length === 0) { showToast('No se encontraron filas válidas con coordenadas.'); return; }
 
-  const { error } = await supabase.from('tiendas').insert(tiendas);
+  const { error } = await sb.from('tiendas').insert(tiendas);
   if (error) { showToast('Error al importar: ' + error.message); return; }
 
   await loadAll();

@@ -224,7 +224,7 @@
 const SUPABASE_URL = 'https://cdswrgjxrltobsdwytzl.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNkc3dyZ2p4cmx0b2JzZHd5dHpsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExMjA2OTUsImV4cCI6MjA5NjY5NjY5NX0.EN1xP-Ku1x3LLNyNZjfzjq5N6yFmBnUFKwsd8_oPzrE';
 
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 const GPS_INTERVAL_MS = 5 * 60 * 1000;
 const GPS_TIMEOUT_MS  = 10 * 60 * 1000;
@@ -301,7 +301,7 @@ async function flushQueue() {
   const remaining = [];
   for (const item of q) {
     try {
-      const { error } = await supabase.from(item.table).insert(item.payload);
+      const { error } = await sb.from(item.table).insert(item.payload);
       if (error) remaining.push(item);
     } catch(e) {
       remaining.push(item);
@@ -322,7 +322,7 @@ window.addEventListener('online', flushQueue);
 // ============================================================
 async function insertConRespaldo(table, payload) {
   try {
-    const { error } = await supabase.from(table).insert(payload);
+    const { error } = await sb.from(table).insert(payload);
     if (error) throw error;
     return true;
   } catch(e) {
