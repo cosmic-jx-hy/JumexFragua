@@ -190,7 +190,7 @@
           </div>
           <div class="table-wrap">
             <table>
-              <thead><tr><th>ID</th><th>Cadena</th><th>Tienda</th><th>Dirección</th><th>Ciudad</th><th>Zona</th></tr></thead>
+              <thead><tr><th>ID</th><th>ID Tienda</th><th>Cadena</th><th>Nombre Tienda</th><th>Dirección</th><th>Lat</th><th>Lng</th><th>Ciudad</th><th>Estado</th><th>Zona</th><th>Activa</th></tr></thead>
               <tbody id="tabla-tiendas"></tbody>
             </table>
           </div>
@@ -422,13 +422,18 @@ function renderTablaTiendas() {
   const tbody = document.getElementById('tabla-tiendas');
   const muestra = db.tiendas.slice(0,200);
   tbody.innerHTML = muestra.map(t => `<tr>
+      <td style="font-family:monospace;font-size:11px">${t.id||'—'}</td>
       <td style="font-family:monospace;font-size:11px">${t.id_tienda||'—'}</td>
       <td>${t.cadena||'—'}</td>
       <td>${t.nombre_tienda||'—'}</td>
-      <td style="color:var(--gray-400)">${t.direccion||'—'}</td>
+      <td style="color:var(--gray-400);font-size:12px">${t.direccion||'—'}</td>
+      <td style="font-family:monospace;font-size:11px">${t.lat||'—'}</td>
+      <td style="font-family:monospace;font-size:11px">${t.lng||'—'}</td>
       <td>${t.ciudad||'—'}</td>
+      <td>${t.estado||'—'}</td>
       <td><span class="badge badge-gray">${t.zona||'—'}</span></td>
-    </tr>`).join('') + (db.tiendas.length > 200 ? `<tr><td colspan="6" style="text-align:center;color:var(--gray-400);padding:10px">... y ${db.tiendas.length-200} más</td></tr>` : '');
+      <td><span class="badge ${t.activa ? 'badge-green' : 'badge-red'}">${t.activa ? 'Sí' : 'No'}</span></td>
+    </tr>`).join('') + (db.tiendas.length > 200 ? `<tr><td colspan="11" style="text-align:center;color:var(--gray-400);padding:10px">... y ${db.tiendas.length-200} más</td></tr>` : '');
 }
 
 function showModalPromotor() { openModal('modal-promotor'); }
