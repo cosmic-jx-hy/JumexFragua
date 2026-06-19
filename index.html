@@ -390,7 +390,7 @@ async function handleLogin() {
   btn.disabled = true;
 
   try {
-    const { data, error } = await supabase
+    const { data, error } = await sb
       .from('promotor')
       .select('*')
       .eq('numero_empleado', codigo)
