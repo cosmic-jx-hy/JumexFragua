@@ -229,6 +229,8 @@ const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 const GPS_INTERVAL_MS = 5 * 60 * 1000;
 const GPS_TIMEOUT_MS  = 10 * 60 * 1000;
 const QUEUE_RETRY_MS  = 30 * 1000;
+const JORNADA_INICIO_H = 6;  // 6am
+const JORNADA_INICIO_M = 30; // 6:30am
 const JORNADA_FIN_H   = 17; // 5pm
 
 let state = {
@@ -445,6 +447,9 @@ async function handleCheckin() {
   renderMain();
   showToast('¡Jornada iniciada!');
   scheduleAutoCheckout();
+
+  // Mandamos el primer punto GPS de inmediato, sin esperar el ciclo de 5 min
+  sendGPS(state.posActual.lat, state.posActual.lng, state.posActual.acc);
 }
 
 // ============================================================
@@ -503,8 +508,12 @@ function startGPS() {
 }
 
 function dentroDeJornada() {
-  const h = new Date().getHours();
-  return h >= 8 && h < JORNADA_FIN_H;
+  const ahora = new Date();
+  const inicio = new Date(ahora);
+  inicio.setHours(JORNADA_INICIO_H, JORNADA_INICIO_M, 0, 0);
+  const fin = new Date(ahora);
+  fin.setHours(JORNADA_FIN_H, 0, 0, 0);
+  return ahora >= inicio && ahora < fin;
 }
 
 function onGPSLost() {
