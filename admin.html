@@ -141,6 +141,12 @@
     <button class="topbar-tab" onclick="switchTab('tiendas',this)">Tiendas</button>
     <button class="topbar-tab" onclick="switchTab('exportar',this)">Exportar / Limpiar</button>
     <div class="topbar-spacer"></div>
+    <div style="display:flex; align-items:center; gap:6px; margin-right:14px;">
+      <span style="font-size:12px; color:var(--gray-400);">Palabra clave para:</span>
+      <input type="date" id="input-palabra-fecha" style="padding:5px 8px; border:1px solid #ddd; border-radius:6px; font-size:13px;" onchange="cargarPalabraClavePorFecha(this.value)">
+      <input type="text" id="input-palabra-clave" placeholder="ej. AGUILA" style="padding:5px 8px; border:1px solid #ddd; border-radius:6px; font-size:13px; width:120px; text-transform:uppercase;">
+      <button class="btn btn-success" style="padding:5px 10px; font-size:12px;" onclick="guardarPalabraClave()">Guardar</button>
+    </div>
     <span class="live-badge"><span class="live-dot"></span>En vivo</span>
   </div>
 
@@ -202,8 +208,18 @@
           <div class="export-card">
             <h3>Exportar registros de asistencia y GPS</h3>
             <p>Descarga todos los registros del periodo en formato Excel (.xlsx) listo para conciliación con el cliente. Incluye timestamps de servidor y coordenadas de cada check-in y posición GPS.</p>
+            <div class="export-actions" style="display:flex; gap:12px; align-items:flex-end; flex-wrap:wrap; margin-bottom:12px;">
+              <div>
+                <label style="display:block; font-size:12px; color:var(--gray-400); margin-bottom:4px;">Desde</label>
+                <input type="date" id="export-fecha-desde" style="padding:8px; border:1px solid #ddd; border-radius:6px;">
+              </div>
+              <div>
+                <label style="display:block; font-size:12px; color:var(--gray-400); margin-bottom:4px;">Hasta</label>
+                <input type="date" id="export-fecha-hasta" style="padding:8px; border:1px solid #ddd; border-radius:6px;">
+              </div>
+            </div>
             <div class="export-actions">
-              <button class="btn btn-success" onclick="exportarDatos()">Exportar todo lo disponible</button>
+              <button class="btn btn-success" onclick="exportarDatos()">Exportar rango seleccionado</button>
             </div>
           </div>
           <div class="export-card" style="border-color: #f5c4b3;">
@@ -254,7 +270,7 @@ const ADMIN_PASS = 'jumex2026';
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 let map, markers = {};
-let db = { promotores: [], tiendas: [], checkins: [], gps: [] };
+let db = { promotores: [], tiendas: [], checkins: [], gps: [], visitas: [] };
 
 function doLogin() {
   const u = document.getElementById('login-user').value.trim();
@@ -274,6 +290,37 @@ async function initApp() {
   await loadAll();
   renderAll();
   subscribeRealtime();
+
+  const ahora = new Date();
+  const hoy = `${ahora.getFullYear()}-${String(ahora.getMonth()+1).padStart(2,'0')}-${String(ahora.getDate()).padStart(2,'0')}`;
+  document.getElementById('export-fecha-desde').value = hoy;
+  document.getElementById('export-fecha-hasta').value = hoy;
+
+  await cargarPalabraClave();
+}
+
+async function cargarPalabraClavePorFecha(fecha) {
+  const { data } = await sb.from('palabra_clave').select('*').eq('fecha', fecha).limit(1);
+  document.getElementById('input-palabra-clave').value = (data && data.length > 0) ? data[0].palabra : '';
+}
+
+async function cargarPalabraClave() {
+  const ahora = new Date();
+  const hoy = `${ahora.getFullYear()}-${String(ahora.getMonth()+1).padStart(2,'0')}-${String(ahora.getDate()).padStart(2,'0')}`;
+  document.getElementById('input-palabra-fecha').value = hoy;
+  const { data } = await sb.from('palabra_clave').select('*').eq('fecha', hoy).limit(1);
+  document.getElementById('input-palabra-clave').value = (data && data.length > 0) ? data[0].palabra : '';
+}
+
+async function guardarPalabraClave() {
+  const palabra = document.getElementById('input-palabra-clave').value.trim().toUpperCase();
+  const fecha = document.getElementById('input-palabra-fecha').value;
+  if (!palabra) { showToast('Escribe una palabra clave primero.'); return; }
+  if (!fecha) { showToast('Selecciona la fecha para la que aplica.'); return; }
+
+  const { error } = await sb.from('palabra_clave').upsert({ fecha, palabra }, { onConflict: 'fecha' });
+  if (error) { showToast('Error al guardar. Revisa la consola.'); console.error(error); return; }
+  showToast(`Palabra clave guardada para ${fecha}: ${palabra}`);
 }
 
 function initMap() {
@@ -282,14 +329,19 @@ function initMap() {
 }
 
 async function loadAll() {
-  const hoy = new Date().toISOString().slice(0,10);
+  const inicioHoy = new Date();
+  inicioHoy.setHours(0,0,0,0);
+  const hoy = inicioHoy.toISOString();
 
-  const [prom, tien, chk, gps] = await Promise.all([
+  const [prom, tien, chk, gps, vis] = await Promise.all([
     sb.from('promotor').select('*').eq('activo', true),
     sb.from('tiendas').select('*').eq('activa', true),
     sb.from('checkins').select('*').gte('fecha', hoy),
     sb.from('gps_logs').select('*').gte('fecha', hoy).order('fecha', { ascending: false }),
+    sb.from('visitas').select('*').gte('hora_inicio', hoy),
   ]);
+
+  db.visitas = vis.data || [];
 
   db.promotores = prom.data || [];
   db.tiendas    = tien.data || [];
@@ -327,7 +379,11 @@ function renderAll() {
 
 function isHoy(iso) {
   if (!iso) return false;
-  return iso.slice(0,10) === new Date().toISOString().slice(0,10);
+  const d = new Date(iso);
+  const hoy = new Date();
+  return d.getFullYear() === hoy.getFullYear()
+      && d.getMonth() === hoy.getMonth()
+      && d.getDate() === hoy.getDate();
 }
 
 function renderSidebar() {
@@ -494,7 +550,8 @@ async function importarExcel(input) {
     direccion:     normalize(r, 'direccion', 'DIRECCION', 'Direccion', 'Dirección', 'DIRECCIÓN') || [r['Calle'], r['Colonia']].filter(Boolean).join(', ') || 'Sin dirección',
     ciudad:        normalize(r, 'CIUDAD', 'Ciudad', 'ciudad'),
     estado:        normalize(r, 'ESTADO', 'Estado', 'estado'),
-    zona:          normalize(r, 'ZONA', 'Zona', 'zona', 'RUTA', 'Ruta'),
+    zona:          normalize(r, 'ZONA', 'Zona', 'zona', 'REGION', 'Región', 'REGIÓN'),
+    ruta:          normalize(r, 'RUTA', 'Ruta', 'ruta', 'CODIGO RUTA', 'Código Ruta'),
     lat:           parseFloat(normalize(r, 'LAT', 'Lat', 'lat', 'LATITUD', 'Latitud', 'Coordenada Y')),
     lng:           parseFloat(normalize(r, 'LNG', 'Lng', 'lng', 'LONGITUD', 'Longitud', 'Coordenada X')),
     activa:        true,
@@ -511,26 +568,95 @@ async function importarExcel(input) {
   input.value = '';
 }
 
-function exportarDatos() {
+async function exportarDatos() {
+  const desdeInput = document.getElementById('export-fecha-desde').value;
+  const hastaInput  = document.getElementById('export-fecha-hasta').value;
+
+  if (!desdeInput || !hastaInput) {
+    showToast('Selecciona fecha "Desde" y "Hasta" primero.');
+    return;
+  }
+
+  const desde = `${desdeInput}T00:00:00`;
+  // sumamos un día a "hasta" para incluir todo ese día completo
+  const hastaDate = new Date(`${hastaInput}T00:00:00`);
+  hastaDate.setDate(hastaDate.getDate() + 1);
+  const hasta = hastaDate.toISOString();
+
+  showToast('Generando reporte, espera un momento...');
+
+  const [checkinsRes, gpsRes, visitasRes] = await Promise.all([
+    sb.from('checkins').select('*').gte('fecha', desde).lt('fecha', hasta).order('fecha', { ascending: true }),
+    sb.from('gps_logs').select('*').gte('fecha', desde).lt('fecha', hasta).order('fecha', { ascending: true }),
+    sb.from('visitas').select('*').gte('hora_inicio', desde).lt('hora_inicio', hasta).order('hora_inicio', { ascending: true }),
+  ]);
+
+  const checkinsData = checkinsRes.data || [];
+  const gpsData = gpsRes.data || [];
+  const visitasData = visitasRes.data || [];
+
+  if (checkinsRes.error || gpsRes.error || visitasRes.error) {
+    showToast('Error al consultar Supabase. Revisa la consola.');
+    console.error(checkinsRes.error, gpsRes.error, visitasRes.error);
+    return;
+  }
+
   const wb = XLSX.utils.book_new();
 
-  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(db.checkins.map(c=>({
-    'Código': c.codigo_promotor, 'Nombre': c.nombre_promotor,
-    'Fecha': c.fecha?.slice(0,10), 'Hora': formatHora(c.fecha),
-    'Latitud': c.lat, 'Longitud': c.lng,
-  }))), 'Check-ins');
+  const HORA_LIMITE = { h: 8, m: 15 }; // 8:15am — hora límite de tolerancia
 
-  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(db.gps.map(g=>({
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(checkinsData.map(c => {
+    const fechaCheckin = new Date(c.fecha);
+    const limite = new Date(fechaCheckin);
+    limite.setHours(HORA_LIMITE.h, HORA_LIMITE.m, 0, 0);
+    const minutosTarde = Math.max(0, Math.round((fechaCheckin - limite) / 60000));
+    const retardo = fechaCheckin > limite;
+    return {
+      'Código': c.codigo_promotor,
+      'Nombre': c.nombre_promotor,
+      'Fecha': c.fecha?.slice(0,10),
+      'Hora check-in': formatHora(c.fecha),
+      'Hora límite': '08:15',
+      'Retardo': retardo ? 'Sí' : 'No',
+      'Minutos tarde': retardo ? minutosTarde : 0,
+      'Latitud': c.lat,
+      'Longitud': c.lng,
+    };
+  })), 'Check-ins');
+
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(gpsData.map(g=>({
     'Código': g.codigo_promotor, 'Fecha': g.fecha?.slice(0,10), 'Hora': formatHora(g.fecha),
     'Latitud': g.lat, 'Longitud': g.lng, 'Precisión(m)': g.precision, 'Batería(%)': g.bateria,
   }))), 'Registros GPS');
+
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(visitasData.map(v=>({
+    'Código': v.codigo_promotor, 'Nombre': v.nombre_promotor, 'Tienda': v.nombre_tienda,
+    'Fecha': v.hora_inicio?.slice(0,10), 'Hora entrada': formatHora(v.hora_inicio), 'Hora salida': formatHora(v.hora_fin),
+    'Duración (min)': v.duracion_min, 'Cumple 40 min': v.cumple_tiempo ? 'Sí' : 'No',
+  }))), 'Visitas a tienda');
+
+  // Resumen por promotor y día: visitas realizadas vs meta de 6/día
+  const resumenMap = {};
+  visitasData.forEach(v => {
+    const dia = v.hora_inicio?.slice(0,10);
+    const key = `${v.codigo_promotor}|${dia}`;
+    if (!resumenMap[key]) resumenMap[key] = { codigo: v.codigo_promotor, nombre: v.nombre_promotor, fecha: dia, visitas: 0, cumplenTiempo: 0 };
+    resumenMap[key].visitas++;
+    if (v.cumple_tiempo) resumenMap[key].cumplenTiempo++;
+  });
+  const META_VISITAS_DIA = 6;
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(Object.values(resumenMap).map(r=>({
+    'Código': r.codigo, 'Nombre': r.nombre, 'Fecha': r.fecha,
+    'Visitas realizadas': r.visitas, 'Meta diaria': META_VISITAS_DIA,
+    'Cumple meta': r.visitas >= META_VISITAS_DIA ? 'Sí' : 'No',
+    'Visitas con tiempo adecuado (≥40min)': r.cumplenTiempo,
+  }))), 'Resumen cumplimiento');
 
   XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(db.promotores.map(p=>({
     'Nombre': p.nombre_completo, 'No. Empleado': p.numero_empleado, 'Región': p.region, 'Ruta': p.ruta,
   }))), 'Promotores');
 
-  const fecha = new Date().toISOString().slice(0,10);
-  XLSX.writeFile(wb, `JumexFragua_${fecha}.xlsx`);
+  XLSX.writeFile(wb, `JumexFragua_${desdeInput}_a_${hastaInput}.xlsx`);
   showToast('Archivo descargado correctamente.');
 }
 

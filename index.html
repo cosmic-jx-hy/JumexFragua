@@ -170,6 +170,12 @@
       </div>
     </div>
 
+    <div class="card" id="card-palabra-clave" style="display:none; background:#fff8e1; border:1px solid #f0d878; text-align:center;">
+      <div style="font-size:11px; color:#8a6d00; letter-spacing:0.5px;">PALABRA CLAVE DE HOY</div>
+      <div id="txt-palabra-clave" style="font-size:22px; font-weight:700; color:#5c4700; letter-spacing:1px;">—</div>
+      <div style="font-size:11px; color:#8a6d00; margin-top:2px;">Escríbela en tu hojita y manda tu selfie por WhatsApp en cada tienda</div>
+    </div>
+
     <div class="checkin-card" id="card-checkin">
       <div class="checkin-time" id="txt-hora">--:--:--</div>
       <div class="checkin-date" id="txt-fecha">--</div>
@@ -232,6 +238,9 @@ const QUEUE_RETRY_MS  = 30 * 1000;
 const JORNADA_INICIO_H = 6;  // 6am
 const JORNADA_INICIO_M = 30; // 6:30am
 const JORNADA_FIN_H   = 17; // 5pm
+const RADIO_RUTA_METROS = 2000; // distancia máxima permitida a una tienda de su ruta para poder hacer check-in
+const VISITA_RADIO_METROS = 50;   // qué tan cerca debe estar para considerarse "dentro" de la tienda
+const VISITA_TIEMPO_ESPERADO_MIN = 40; // tiempo de servicio estimado por tienda
 
 let state = {
   promotor: null,
@@ -363,6 +372,14 @@ function renderMain() {
   document.getElementById('avatar-initials').textContent = getInitials(p.nombre_completo);
   document.getElementById('txt-meta').textContent = `Empleado: ${p.numero_empleado} · Región: ${p.region || '—'}`;
 
+  const cardPalabra = document.getElementById('card-palabra-clave');
+  if (state.palabraClave) {
+    document.getElementById('txt-palabra-clave').textContent = state.palabraClave;
+    cardPalabra.style.display = 'block';
+  } else {
+    cardPalabra.style.display = 'none';
+  }
+
   const card = document.getElementById('card-checkin');
   const btn  = document.getElementById('btn-checkin');
 
@@ -409,6 +426,8 @@ async function handleLogin() {
       startClock();
       startGPS();
       flushQueue();
+      await cargarTiendasDeRuta();
+      await cargarPalabraClave();
     } else {
       showAlert('login', 'No encontramos tu número de empleado activo. Verifica con tu supervisor.');
     }
@@ -420,11 +439,139 @@ async function handleLogin() {
 }
 
 // ============================================================
+//  VALIDACIÓN DE RUTA — evita check-in lejos de las tiendas asignadas
+// ============================================================
+state.tiendasRuta = [];
+
+state.palabraClave = '';
+
+async function cargarPalabraClave() {
+  const ahora = new Date();
+  const hoy = `${ahora.getFullYear()}-${String(ahora.getMonth()+1).padStart(2,'0')}-${String(ahora.getDate()).padStart(2,'0')}`;
+  const { data } = await sb.from('palabra_clave').select('*').eq('fecha', hoy).limit(1);
+  state.palabraClave = (data && data.length > 0) ? data[0].palabra : '';
+  renderMain();
+}
+
+async function cargarTiendasDeRuta() {
+  const esSupervisor = (state.promotor.rol || '').toLowerCase() === 'supervisor';
+
+  if (esSupervisor) {
+    // Supervisor: carga todas las tiendas de su zona
+    const zona = (state.promotor.zona || '').trim();
+    if (!zona) { state.tiendasRuta = []; return; }
+    const { data, error } = await sb
+      .from('tiendas')
+      .select('id_tienda, nombre_tienda, lat, lng, ruta, zona')
+      .ilike('zona', zona)
+      .eq('activa', true);
+    if (error) { console.warn('No se pudieron cargar tiendas de la zona:', error); state.tiendasRuta = []; return; }
+    state.tiendasRuta = data || [];
+  } else {
+    // Promotor: carga solo las tiendas de su ruta específica
+    const ruta = (state.promotor.ruta || '').trim();
+    if (!ruta) { state.tiendasRuta = []; return; }
+    const { data, error } = await sb
+      .from('tiendas')
+      .select('id_tienda, nombre_tienda, lat, lng, ruta')
+      .ilike('ruta', ruta)
+      .eq('activa', true);
+    if (error) { console.warn('No se pudieron cargar tiendas de la ruta:', error); state.tiendasRuta = []; return; }
+    state.tiendasRuta = data || [];
+  }
+}
+
+function distanciaMetros(lat1, lng1, lat2, lng2) {
+  const R = 6371000;
+  const toRad = g => g * Math.PI / 180;
+  const dLat = toRad(lat2 - lat1);
+  const dLng = toRad(lng2 - lng1);
+  const a = Math.sin(dLat/2)**2 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng/2)**2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+}
+
+function distanciaMinimaARuta(lat, lng) {
+  if (!state.tiendasRuta.length) return null; // sin tiendas registradas en su ruta
+  let min = Infinity;
+  state.tiendasRuta.forEach(t => {
+    const d = distanciaMetros(lat, lng, t.lat, t.lng);
+    if (d < min) min = d;
+  });
+  return min;
+}
+
+// ============================================================
+//  DETECCIÓN AUTOMÁTICA DE VISITA A TIENDA (entra/sale por GPS)
+// ============================================================
+state.visitaActual = null; // { tienda, inicio }
+
+function tiendaMasCercana(lat, lng) {
+  let mejor = null, min = Infinity;
+  state.tiendasRuta.forEach(t => {
+    const d = distanciaMetros(lat, lng, t.lat, t.lng);
+    if (d < min) { min = d; mejor = t; }
+  });
+  return mejor ? { tienda: mejor, distancia: min } : null;
+}
+
+async function checarVisitaTienda(lat, lng) {
+  if (!state.checkinDone || !state.tiendasRuta.length) return;
+
+  const cercana = tiendaMasCercana(lat, lng);
+  const dentro = cercana && cercana.distancia <= VISITA_RADIO_METROS;
+
+  if (dentro && !state.visitaActual) {
+    // Entró a una tienda nueva
+    state.visitaActual = { tienda: cercana.tienda, inicio: new Date() };
+    if (state.palabraClave) {
+      showToast(`📍 Llegaste a ${cercana.tienda.nombre_tienda}. Recuerda tu selfie con la palabra clave: "${state.palabraClave}"`, 6000);
+    }
+  } else if (dentro && state.visitaActual && state.visitaActual.tienda.id_tienda !== cercana.tienda.id_tienda) {
+    // Saltó directo de una tienda a otra sin salir del radio (raro, pero cerramos la anterior y abrimos la nueva)
+    await cerrarVisitaActual();
+    state.visitaActual = { tienda: cercana.tienda, inicio: new Date() };
+  } else if (!dentro && state.visitaActual) {
+    // Salió del radio de la tienda donde estaba
+    await cerrarVisitaActual();
+  }
+}
+
+async function cerrarVisitaActual() {
+  if (!state.visitaActual) return;
+  const { tienda, inicio } = state.visitaActual;
+  const fin = new Date();
+  const duracionMin = Math.round((fin - inicio) / 60000);
+
+  await insertConRespaldo('visitas', {
+    codigo_promotor: state.promotor.numero_empleado,
+    nombre_promotor: state.promotor.nombre_completo,
+    id_tienda: tienda.id_tienda,
+    nombre_tienda: tienda.nombre_tienda,
+    hora_inicio: inicio.toISOString(),
+    hora_fin: fin.toISOString(),
+    duracion_min: duracionMin,
+    cumple_tiempo: duracionMin >= VISITA_TIEMPO_ESPERADO_MIN,
+  });
+
+  state.visitaActual = null;
+}
+
+// ============================================================
 //  CHECK-IN ÚNICO
 // ============================================================
 async function handleCheckin() {
   if (state.checkinDone) return;
   if (!state.posActual) { showToast('Esperando señal GPS...'); return; }
+
+  const dist = distanciaMinimaARuta(state.posActual.lat, state.posActual.lng);
+  const esSupervisor = (state.promotor.rol || '').toLowerCase() === 'supervisor';
+  const referencia = esSupervisor
+    ? `zona ${state.promotor.zona}`
+    : `ruta ${state.promotor.ruta}`;
+  if (dist !== null && dist > RADIO_RUTA_METROS) {
+    showToast(`⚠️ Estás a ${(dist/1000).toFixed(1)} km de las tiendas de tu ${referencia}. No puedes hacer check-in desde aquí.`, 5000);
+    return;
+  }
 
   const btn = document.getElementById('btn-checkin');
   btn.innerHTML = '<span class="spinner"></span>Registrando...';
@@ -445,7 +592,7 @@ async function handleCheckin() {
   state.checkinTime = now.toISOString();
   saveSession();
   renderMain();
-  showToast('¡Jornada iniciada!');
+  showToast(state.palabraClave ? `¡Jornada iniciada! Palabra clave de hoy: "${state.palabraClave}"` : '¡Jornada iniciada!', 5000);
   scheduleAutoCheckout();
 
   // Mandamos el primer punto GPS de inmediato, sin esperar el ciclo de 5 min
@@ -490,6 +637,8 @@ function startGPS() {
 
     if (state.gpsTimeoutId) clearTimeout(state.gpsTimeoutId);
     state.gpsTimeoutId = setTimeout(onGPSLost, GPS_TIMEOUT_MS);
+
+    checarVisitaTienda(lat, lng);
   }
 
   function onErr() {
@@ -555,6 +704,7 @@ function scheduleAutoCheckout() {
       state.jornadaFinalizada = true;
       saveSession();
       renderMain();
+      cerrarVisitaActual();
       showToast('Jornada finalizada automáticamente a las 5:00 pm', 4000);
     }, msHasta);
   } else if (msHasta <= 0) {
