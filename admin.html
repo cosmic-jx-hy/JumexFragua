@@ -196,7 +196,7 @@
           </div>
           <div class="table-wrap">
             <table>
-              <thead><tr><th>ID</th><th>ID Tienda</th><th>Cadena</th><th>Nombre Tienda</th><th>Dirección</th><th>Lat</th><th>Lng</th><th>Ciudad</th><th>Estado</th><th>Zona</th><th>Activa</th></tr></thead>
+              <thead><tr><th>ID</th><th>ID Tienda</th><th>Cadena</th><th>Nombre Tienda</th><th>Dirección</th><th>Lat</th><th>Lng</th><th>Ciudad</th><th>Estado</th><th>Zona</th><th>Ruta</th><th>Activa</th></tr></thead>
               <tbody id="tabla-tiendas"></tbody>
             </table>
           </div>
@@ -548,10 +548,10 @@ async function guardarPromotor() {
   let error;
   if (id) {
     // Edición
-    ({ error } = await sb.from('promotor').update({ nombre_completo, numero_empleado, region, ruta, rol }).eq('id', id));
+    ({ error } = await sb.from('promotor').update({ nombre_completo, numero_empleado, region, zona, ruta, rol }).eq('id', id));
   } else {
     // Alta nueva
-    ({ error } = await sb.from('promotor').insert({ nombre_completo, numero_empleado, region, ruta, rol, activo: true }));
+    ({ error } = await sb.from('promotor').insert({ nombre_completo, numero_empleado, region, zona, ruta, rol, activo: true }));
   }
 
   if (error) { showToast('Error: ' + error.message); return; }
