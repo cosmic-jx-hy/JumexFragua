@@ -244,6 +244,7 @@
 <div class="modal-bg" id="modal-promotor">
   <div class="modal">
     <h2 id="mp-titulo">Nuevo promotor</h2>
+    <input type="hidden" id="mp-id">
     <div class="modal-label">Nombre completo</div>
     <input type="text" id="mp-nombre" placeholder="Nombre del promotor">
     <div class="modal-label">Número de empleado</div>
@@ -480,7 +481,10 @@ function renderTablaPromotores() {
       <td>${p.region || '—'}</td>
       <td>${p.ruta || '<span style="color:var(--gray-400)">Sin asignar</span>'}</td>
       <td>${estado}</td>
-      <td><button class="btn btn-sm btn-outline" style="color:var(--danger);border-color:#f5c4b3" onclick="bajaPromotor(${p.id})">Baja</button></td>
+      <td>
+        <button class="btn btn-sm btn-outline" onclick="editarPromotor(${p.id})" style="margin-right:4px">Editar</button>
+        <button class="btn btn-sm btn-outline" style="color:var(--danger);border-color:#f5c4b3" onclick="bajaPromotor(${p.id})">Baja</button>
+      </td>
     </tr>`;
   }).join('') || `<tr><td colspan="6" style="text-align:center;color:var(--gray-400);padding:20px">Sin promotores. Agrega el primero.</td></tr>`;
 }
@@ -503,9 +507,34 @@ function renderTablaTiendas() {
     </tr>`).join('') + (db.tiendas.length > 200 ? `<tr><td colspan="11" style="text-align:center;color:var(--gray-400);padding:10px">... y ${db.tiendas.length-200} más</td></tr>` : '');
 }
 
-function showModalPromotor() { openModal('modal-promotor'); }
+function showModalPromotor() {
+  document.getElementById('mp-titulo').textContent = 'Nuevo promotor';
+  document.getElementById('mp-id').value = '';
+  document.getElementById('mp-nombre').value = '';
+  document.getElementById('mp-codigo').value = '';
+  document.getElementById('mp-region').value = '';
+  document.getElementById('mp-zona').value = '';
+  document.getElementById('mp-ruta').value = '';
+  document.getElementById('mp-rol').value = 'promotor';
+  openModal('modal-promotor');
+}
+
+function editarPromotor(id) {
+  const p = db.promotores.find(x => x.id === id);
+  if (!p) return;
+  document.getElementById('mp-titulo').textContent = 'Editar promotor';
+  document.getElementById('mp-id').value = p.id;
+  document.getElementById('mp-nombre').value = p.nombre_completo || '';
+  document.getElementById('mp-codigo').value = p.numero_empleado || '';
+  document.getElementById('mp-region').value = p.region || '';
+  document.getElementById('mp-zona').value = p.zona || '';
+  document.getElementById('mp-ruta').value = p.ruta || '';
+  document.getElementById('mp-rol').value = p.rol || 'promotor';
+  openModal('modal-promotor');
+}
 
 async function guardarPromotor() {
+  const id             = document.getElementById('mp-id').value;
   const nombre_completo = document.getElementById('mp-nombre').value.trim();
   const numero_empleado = document.getElementById('mp-codigo').value.trim();
   const region         = document.getElementById('mp-region').value.trim();
@@ -516,19 +545,21 @@ async function guardarPromotor() {
   if (!nombre_completo || !numero_empleado) { showToast('Completa nombre y número de empleado.'); return; }
   if (!zona) { showToast('Selecciona una zona.'); return; }
 
-  const { error } = await sb.from('promotor').insert({ nombre_completo, numero_empleado, region, zona, ruta, rol, activo: true });
+  let error;
+  if (id) {
+    // Edición
+    ({ error } = await sb.from('promotor').update({ nombre_completo, numero_empleado, region, zona, ruta, rol }).eq('id', id));
+  } else {
+    // Alta nueva
+    ({ error } = await sb.from('promotor').insert({ nombre_completo, numero_empleado, region, zona, ruta, rol, activo: true }));
+  }
+
   if (error) { showToast('Error: ' + error.message); return; }
 
   closeModal('modal-promotor');
-  document.getElementById('mp-nombre').value = '';
-  document.getElementById('mp-codigo').value = '';
-  document.getElementById('mp-region').value = '';
-  document.getElementById('mp-zona').value = '';
-  document.getElementById('mp-ruta').value = '';
-  document.getElementById('mp-rol').value = 'promotor';
   await loadAll();
   renderAll();
-  showToast(`${rol === 'supervisor' ? 'Supervisor' : 'Promotor'} ${nombre_completo} agregado.`);
+  showToast(id ? `${nombre_completo} actualizado.` : `${rol === 'supervisor' ? 'Supervisor' : 'Promotor'} ${nombre_completo} agregado.`);
 }
 
 async function bajaPromotor(id) {
