@@ -429,7 +429,7 @@ function renderMap() {
   db.tiendas.forEach(t => {
     const lat = parseFloat(t.lat), lng = parseFloat(t.lng);
     if (!isNaN(lat) && !isNaN(lng)) {
-      L.marker([lat,lng], {icon:tiendaIcon}).addTo(map).bindPopup(`<b>${t.nombre_tienda||t.cadena}</b><br>${t.direccion||''}`);
+      L.marker([lat,lng], {icon:tiendaIcon}).addTo(map).bindPopup(`<b>${t.nombre_tienda||t.cadena}</b><br><span style="font-family:monospace;font-size:12px">${t.id_tienda||'—'}</span>`);
     }
   });
 
