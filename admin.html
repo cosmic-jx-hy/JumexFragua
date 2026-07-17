@@ -548,10 +548,10 @@ async function guardarPromotor() {
   let error;
   if (id) {
     // Edición
-    ({ error } = await sb.from('promotor').update({ nombre_completo, numero_empleado, region, zona, ruta, rol }).eq('id', id));
+    ({ error } = await sb.from('promotor').update({ nombre_completo, numero_empleado, region, ruta, rol }).eq('id', id));
   } else {
     // Alta nueva
-    ({ error } = await sb.from('promotor').insert({ nombre_completo, numero_empleado, region, zona, ruta, rol, activo: true }));
+    ({ error } = await sb.from('promotor').insert({ nombre_completo, numero_empleado, region, ruta, rol, activo: true }));
   }
 
   if (error) { showToast('Error: ' + error.message); return; }
