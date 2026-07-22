@@ -232,6 +232,19 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+// ── Versión de la app ─────────────────────────────────────────
+// Incrementar este número cada vez que se suba una actualización
+const APP_VERSION = '1.3';
+(function checkVersion() {
+  const stored = localStorage.getItem('jf_app_version');
+  if (stored !== APP_VERSION) {
+    // Versión nueva detectada — limpiar caché de sesión para forzar código fresco
+    localStorage.removeItem('jf_session');
+    localStorage.removeItem('jf_queue');
+    localStorage.setItem('jf_app_version', APP_VERSION);
+  }
+})();
+
 const GPS_INTERVAL_MS = 5 * 60 * 1000;
 const GPS_TIMEOUT_MS  = 10 * 60 * 1000;
 const QUEUE_RETRY_MS  = 30 * 1000;
