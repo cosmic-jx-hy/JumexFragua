@@ -403,20 +403,17 @@ function renderSidebar() {
   list.innerHTML = db.promotores.map(p => {
     const activo = db.checkins.some(c => c.codigo_promotor === p.numero_empleado && isHoy(c.fecha));
     const gpsLibre = p.gps_activo === false;
+    const btnLiberar = activo ? `<button class="btn btn-sm" onclick="event.stopPropagation(); toggleGPS(${p.id}, ${!gpsLibre})"
+        style="font-size:10px;padding:3px 7px;margin-left:4px;background:${gpsLibre ? '#e8f5e9' : '#fce4ec'};color:${gpsLibre ? '#2e7d32' : '#c62828'};border:1px solid ${gpsLibre ? '#a5d6a7' : '#ef9a9a'};border-radius:4px;cursor:pointer;white-space:nowrap;">
+        ${gpsLibre ? '&#9654; Reactivar' : '&#9632; Liberar'}
+      </button>` : '';
     return `<div class="promotor-item" onclick="focusPromotor('${p.numero_empleado}')">
       <div class="p-avatar ${activo?'active':''}">${initials(p.nombre_completo)}</div>
       <div class="p-info">
         <div class="p-name">${p.nombre_completo}</div>
         <div class="p-sub">${p.ruta || 'Sin ruta'} · ${p.numero_empleado}</div>
       </div>
-      ${activo ? `<button class="btn btn-sm" onclick="event.stopPropagation(); toggleGPS(${p.id}, ${!gpsLibre})"
-        style="font-size:10px; padding:3px 7px; margin-left:4px;
-        background:${gpsLibre ? '#e8f5e9' : '#fce4ec'};
-        color:${gpsLibre ? '#2e7d32' : '#c62828'};
-        border:1px solid ${gpsLibre ? '#a5d6a7' : '#ef9a9a'};
-        border-radius:4px; cursor:pointer; white-space:nowrap;">
-        ${gpsLibre ? '▶ Reactivar' : '⏹ Liberar'}
-      </button>` : ''}
+      ${btnLiberar}
       <div class="p-dot ${activo && !gpsLibre ? 'on' : ''}"></div>
     </div>`;
   }).join('') || '<div style="padding:20px;font-size:13px;color:var(--gray-400)">Sin promotores registrados.</div>';
@@ -460,11 +457,15 @@ function renderMap() {
   });
 
   const ultimasPos = {};
+  const LIMITE_MS = 15 * 60 * 1000; // 15 minutos
+  const ahora = Date.now();
   db.gps.filter(g => isHoy(g.fecha)).forEach(g => {
     if (!ultimasPos[g.codigo_promotor] || g.fecha > ultimasPos[g.codigo_promotor].fecha) ultimasPos[g.codigo_promotor] = g;
   });
 
   Object.values(ultimasPos).forEach(g => {
+    // No mostrar si el último ping tiene más de 15 minutos
+    if (ahora - new Date(g.fecha).getTime() > LIMITE_MS) return;
     const lat = parseFloat(g.lat), lng = parseFloat(g.lng);
     if (!isNaN(lat) && !isNaN(lng)) {
       const p = db.promotores.find(x => x.numero_empleado === g.codigo_promotor);
