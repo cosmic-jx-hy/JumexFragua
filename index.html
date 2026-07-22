@@ -649,8 +649,21 @@ function startGPS() {
 
   navigator.geolocation.watchPosition(onPos, onErr, { enableHighAccuracy: true, maximumAge: 30000, timeout: 20000 });
 
-  setInterval(() => {
+  setInterval(async () => {
     if (state.posActual && state.checkinDone && !state.jornadaFinalizada && dentroDeJornada()) {
+      // Verificar si el admin desactivó el GPS desde Supabase
+      const { data } = await sb.from('promotor')
+        .select('gps_activo')
+        .eq('numero_empleado', state.promotor.numero_empleado)
+        .limit(1);
+      if (data && data[0] && data[0].gps_activo === false) {
+        // Admin liberó al promotor — marcar jornada como finalizada
+        state.jornadaFinalizada = true;
+        saveSession();
+        renderMain();
+        showToast('Tu jornada ha sido finalizada por tu supervisor.', 5000);
+        return;
+      }
       sendGPS(state.posActual.lat, state.posActual.lng, state.posActual.acc);
     }
   }, GPS_INTERVAL_MS);
