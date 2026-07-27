@@ -247,7 +247,7 @@ const APP_VERSION = '1.3';
 
 const GPS_INTERVAL_MS = 5 * 60 * 1000;
 const GPS_TIMEOUT_MS  = 10 * 60 * 1000;
-const QUEUE_RETRY_MS  = 30 * 1000;
+const QUEUE_RETRY_MS  = 5 * 60 * 1000; // cada 5 min, no cada 30 seg
 const JORNADA_INICIO_H = 6;  // 6am
 const JORNADA_INICIO_M = 30; // 6:30am
 const JORNADA_FIN_H   = 17; // 5pm
@@ -516,7 +516,12 @@ function distanciaMinimaARuta(lat, lng) {
 // ============================================================
 //  DETECCIÓN AUTOMÁTICA DE VISITA A TIENDA (entra/sale por GPS)
 // ============================================================
-state.visitaActual = null; // { tienda, inicio }
+state.visitaActual    = null;  // { tienda, inicio }
+state.salidaTimeout   = null;  // timer de debounce para confirmar salida
+state.ultimasVisitas  = {};    // { id_tienda: timestamp } — evita duplicados recientes
+
+const DEBOUNCE_SALIDA_MS = 3 * 60 * 1000;  // esperar 3 min antes de confirmar salida
+const DEDUP_VISITA_MS    = 10 * 60 * 1000; // ignorar visita si la misma tienda fue registrada hace menos de 10 min
 
 function tiendaMasCercana(lat, lng) {
   let mejor = null, min = Infinity;
@@ -533,19 +538,37 @@ async function checarVisitaTienda(lat, lng) {
   const cercana = tiendaMasCercana(lat, lng);
   const dentro = cercana && cercana.distancia <= VISITA_RADIO_METROS;
 
-  if (dentro && !state.visitaActual) {
-    // Entró a una tienda nueva
-    state.visitaActual = { tienda: cercana.tienda, inicio: new Date() };
-    if (state.palabraClave) {
-      showToast(`📍 Llegaste a ${cercana.tienda.nombre_tienda}. Recuerda tu selfie con la palabra clave: "${state.palabraClave}"`, 6000);
+  if (dentro) {
+    // Si hay un timer de salida pendiente, cancelarlo — sigue dentro
+    if (state.salidaTimeout) {
+      clearTimeout(state.salidaTimeout);
+      state.salidaTimeout = null;
     }
-  } else if (dentro && state.visitaActual && state.visitaActual.tienda.id_tienda !== cercana.tienda.id_tienda) {
-    // Saltó directo de una tienda a otra sin salir del radio (raro, pero cerramos la anterior y abrimos la nueva)
-    await cerrarVisitaActual();
-    state.visitaActual = { tienda: cercana.tienda, inicio: new Date() };
-  } else if (!dentro && state.visitaActual) {
-    // Salió del radio de la tienda donde estaba
-    await cerrarVisitaActual();
+
+    if (!state.visitaActual) {
+      // Verificar que no registramos esta tienda hace menos de 10 min (dedup)
+      const ultima = state.ultimasVisitas[cercana.tienda.id_tienda];
+      if (ultima && Date.now() - ultima < DEDUP_VISITA_MS) return;
+
+      // Entró a una tienda nueva
+      state.visitaActual = { tienda: cercana.tienda, inicio: new Date() };
+      if (state.palabraClave) {
+        showToast(`📍 Llegaste a ${cercana.tienda.nombre_tienda}. Recuerda tu selfie con la palabra clave: "${state.palabraClave}"`, 6000);
+      }
+    } else if (state.visitaActual.tienda.id_tienda !== cercana.tienda.id_tienda) {
+      // Saltó directo a otra tienda — cerrar la anterior y abrir la nueva
+      await cerrarVisitaActual();
+      const ultima = state.ultimasVisitas[cercana.tienda.id_tienda];
+      if (!ultima || Date.now() - ultima >= DEDUP_VISITA_MS) {
+        state.visitaActual = { tienda: cercana.tienda, inicio: new Date() };
+      }
+    }
+  } else if (state.visitaActual && !state.salidaTimeout) {
+    // Salió del radio — esperar 3 minutos para confirmar que no es fluctuación GPS
+    state.salidaTimeout = setTimeout(async () => {
+      state.salidaTimeout = null;
+      await cerrarVisitaActual();
+    }, DEBOUNCE_SALIDA_MS);
   }
 }
 
@@ -554,6 +577,9 @@ async function cerrarVisitaActual() {
   const { tienda, inicio } = state.visitaActual;
   const fin = new Date();
   const duracionMin = Math.round((fin - inicio) / 60000);
+
+  // Registrar timestamp para deduplicación
+  state.ultimasVisitas[tienda.id_tienda] = Date.now();
 
   await insertConRespaldo('visitas', {
     codigo_promotor: state.promotor.numero_empleado,
