@@ -126,7 +126,7 @@
   <div class="login-box">
     <h1>Panel de administración</h1>
     <p>Jumex Fragua · Solo acceso autorizado</p>
-    <div class="field"><label>Usuario</label><input type="text" id="login-user" placeholder="admin"></div>
+    <div class="field"><label>Correo</label><input type="email" id="login-user" placeholder="admin@jumexfragua.com"></div>
     <div class="field"><label>Contraseña</label><input type="password" id="login-pass" placeholder="••••••••"></div>
     <div id="login-err">Credenciales incorrectas.</div>
     <button class="btn btn-primary" style="margin-top:8px" onclick="doLogin()">Entrar</button>
@@ -148,6 +148,7 @@
       <button class="btn btn-success" style="padding:5px 10px; font-size:12px;" onclick="guardarPalabraClave()">Guardar</button>
     </div>
     <span class="live-badge"><span class="live-dot"></span>En vivo</span>
+    <button class="btn btn-outline btn-sm" style="margin-left:12px" onclick="doLogout()">Cerrar sesión</button>
   </div>
 
   <div class="main-wrap">
@@ -276,26 +277,52 @@
 <script>
 const SUPABASE_URL = 'https://cdswrgjxrltobsdwytzl.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNkc3dyZ2p4cmx0b2JzZHd5dHpsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExMjA2OTUsImV4cCI6MjA5NjY5NjY5NX0.EN1xP-Ku1x3LLNyNZjfzjq5N6yFmBnUFKwsd8_oPzrE';
-const ADMIN_USER = 'admin';
-const ADMIN_PASS = 'jumex2026';
 
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 let map, markers = {};
 let db = { promotores: [], tiendas: [], checkins: [], gps: [], visitas: [] };
 
-function doLogin() {
-  const u = document.getElementById('login-user').value.trim();
-  const p = document.getElementById('login-pass').value;
-  if (u === ADMIN_USER && p === ADMIN_PASS) {
+// ============================================================
+//  LOGIN — vía Supabase Auth (ya no hay password en el código)
+// ============================================================
+async function doLogin() {
+  const email = document.getElementById('login-user').value.trim();
+  const pass = document.getElementById('login-pass').value;
+  const btn = document.querySelector('#login-overlay .btn-primary');
+  btn.disabled = true;
+  document.getElementById('login-err').style.display = 'none';
+
+  const { data, error } = await sb.auth.signInWithPassword({ email, password: pass });
+
+  btn.disabled = false;
+
+  if (error || !data.session) {
+    document.getElementById('login-err').textContent = 'Credenciales incorrectas.';
+    document.getElementById('login-err').style.display = 'block';
+    return;
+  }
+
+  document.getElementById('login-overlay').style.display = 'none';
+  document.getElementById('app').style.display = 'flex';
+  initApp();
+}
+document.getElementById('login-pass').addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
+
+// Si ya hay una sesión activa (recargaste la página), entra directo sin pedir login de nuevo
+window.addEventListener('load', async () => {
+  const { data: { session } } = await sb.auth.getSession();
+  if (session) {
     document.getElementById('login-overlay').style.display = 'none';
     document.getElementById('app').style.display = 'flex';
     initApp();
-  } else {
-    document.getElementById('login-err').style.display = 'block';
   }
+});
+
+function doLogout() {
+  sb.auth.signOut();
+  location.reload();
 }
-document.getElementById('login-pass').addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
 
 async function initApp() {
   initMap();

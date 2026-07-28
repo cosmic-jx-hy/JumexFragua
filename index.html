@@ -133,15 +133,15 @@
     <div class="login-form">
       <div class="input-group">
         <label>Tu número de empleado</label>
-        <input type="text" id="input-codigo" placeholder="Ej: 1023" autocomplete="off">
+        <input type="text" id="input-codigo" placeholder="Ej: 1023" autocomplete="off" inputmode="numeric">
       </div>
       <div class="input-group">
-        <label>Tu nombre</label>
-        <input type="text" id="input-nombre" placeholder="Nombre completo" autocomplete="name">
+        <label>Tu PIN</label>
+        <input type="password" id="input-pin" placeholder="••••" autocomplete="off" inputmode="numeric" maxlength="6">
       </div>
       <div id="alert-login" class="alert alert-danger">
         <span class="alert-icon">⚠</span>
-        <span id="alert-login-msg">No encontramos tu número de empleado. Verifica con tu supervisor.</span>
+        <span id="alert-login-msg">Número de empleado o PIN incorrecto.</span>
       </div>
       <button class="btn btn-primary" id="btn-entrar" onclick="handleLogin()">Entrar</button>
     </div>
@@ -414,20 +414,17 @@ function renderMain() {
 // ============================================================
 async function handleLogin() {
   const codigo = document.getElementById('input-codigo').value.trim();
-  const nombre = document.getElementById('input-nombre').value.trim();
-  if (!codigo || !nombre) { showAlert('login','Ingresa tu número de empleado y nombre.'); return; }
+  const pin = document.getElementById('input-pin').value.trim();
+  if (!codigo || !pin) { showAlert('login','Ingresa tu número de empleado y tu PIN.'); return; }
 
   const btn = document.getElementById('btn-entrar');
   btn.innerHTML = '<span class="spinner"></span>Verificando...';
   btn.disabled = true;
 
   try {
-    const { data, error } = await sb
-      .from('promotor')
-      .select('*')
-      .eq('numero_empleado', codigo)
-      .eq('activo', true)
-      .limit(1);
+    // La verificación real corre en el servidor (función verificar_promotor en Supabase),
+    // que compara el PIN contra el hash guardado. El PIN nunca se compara aquí en el navegador.
+    const { data, error } = await sb.rpc('verificar_promotor', { p_codigo: codigo, p_pin: pin });
 
     if (error) throw error;
 
@@ -442,7 +439,7 @@ async function handleLogin() {
       await cargarTiendasDeRuta();
       await cargarPalabraClave();
     } else {
-      showAlert('login', 'No encontramos tu número de empleado activo. Verifica con tu supervisor.');
+      showAlert('login', 'Número de empleado o PIN incorrecto. Verifica con tu supervisor.');
     }
   } catch(e) {
     showAlert('login','Sin conexión o error de red. Intenta de nuevo.');
