@@ -6,6 +6,8 @@
 <title>Administración — Jumex Fragua</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <style>
 :root{
   --brand:#1D9E75;--brand-dark:#0F6E56;--brand-light:#E1F5EE;
@@ -398,7 +400,8 @@ body{font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;ba
           <div class="actions">
             <input type="date" id="exec-fecha" onchange="loadExecutive()" style="padding:8px 10px;border:1px solid var(--gray-200);border-radius:8px;background:#fff">
             <button class="btn btn-outline" onclick="toggleCaptureMode()">Modo captura</button>
-            <button class="btn btn-primary" onclick="printExecutive()">Imprimir / Guardar PDF</button>
+            <button class="btn btn-outline" onclick="printExecutive()">Imprimir</button>
+            <button class="btn btn-primary" id="btn-exec-pdf" onclick="downloadExecutivePDF()">Descargar PDF</button>
           </div>
         </div>
 
@@ -764,6 +767,55 @@ function renderExecutiveTrend(fecha,trendDesde,promCount){
 
 function toggleCaptureMode(){document.body.classList.toggle('exec-capture');if(document.body.classList.contains('exec-capture'))showToast('Modo captura activo. Presiona Esc para salir.',3500)}
 function printExecutive(){document.body.classList.add('print-executive');setTimeout(()=>window.print(),80)}
+
+async function downloadExecutivePDF(){
+  const btn=document.getElementById('btn-exec-pdf');
+  const report=document.getElementById('exec-report');
+  if(!report){showToast('No se encontró el reporte ejecutivo.',4000);return}
+  if(typeof html2canvas==='undefined'||!window.jspdf?.jsPDF){showToast('No se pudo cargar el generador de PDF. Revisa tu conexión.',5000);return}
+  const originalText=btn?.textContent||'Descargar PDF';
+  if(btn){btn.disabled=true;btn.textContent='Generando PDF...'}
+  try{
+    // Espera a que las fuentes y el reporte estén completamente renderizados.
+    if(document.fonts?.ready)await document.fonts.ready;
+    await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));
+
+    const canvas=await html2canvas(report,{
+      scale:2,
+      backgroundColor:'#ffffff',
+      useCORS:true,
+      logging:false,
+      scrollX:0,
+      scrollY:-window.scrollY,
+      windowWidth:Math.max(document.documentElement.clientWidth,report.scrollWidth)
+    });
+
+    const {jsPDF}=window.jspdf;
+    const pdf=new jsPDF({orientation:'landscape',unit:'mm',format:'a4',compress:true});
+    const pageW=pdf.internal.pageSize.getWidth();
+    const pageH=pdf.internal.pageSize.getHeight();
+    const margin=6;
+    const maxW=pageW-margin*2;
+    const maxH=pageH-margin*2;
+    const scale=Math.min(maxW/canvas.width,maxH/canvas.height);
+    const imgW=canvas.width*scale;
+    const imgH=canvas.height*scale;
+    const x=(pageW-imgW)/2;
+    const y=(pageH-imgH)/2;
+    const img=canvas.toDataURL('image/jpeg',0.96);
+    pdf.addImage(img,'JPEG',x,y,imgW,imgH,undefined,'FAST');
+
+    const fecha=document.getElementById('exec-fecha')?.value||todayLocal();
+    pdf.save(`JumexFragua_ReporteEjecutivo_${fecha}.pdf`);
+    showToast('PDF generado y descargado.',3500);
+  }catch(e){
+    console.error('Error al generar PDF:',e);
+    showToast('No se pudo generar el PDF. Intenta nuevamente.',5000);
+  }finally{
+    if(btn){btn.disabled=false;btn.textContent=originalText}
+  }
+}
+
 window.addEventListener('afterprint',()=>document.body.classList.remove('print-executive'));
 window.addEventListener('keydown',e=>{if(e.key==='Escape'&&document.body.classList.contains('exec-capture'))document.body.classList.remove('exec-capture')});
 
