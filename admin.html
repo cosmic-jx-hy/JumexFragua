@@ -344,6 +344,27 @@ body{font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;ba
   letter-spacing:1.4px;
 }
 
+
+/* ===== V4 OFFLINE ADMIN ===== */
+.exec-sync-disclaimer{
+  margin-top:8px;
+  padding:8px 10px;
+  border:1px solid #dfe8e4;
+  border-radius:8px;
+  background:#f7faf8;
+  color:#74817b;
+  font-size:8.5px;
+  line-height:1.35;
+}
+.badge-blue{background:#eaf2ff;color:#2458a6}
+.badge-purple{background:#f2ecff;color:#6543a7}
+.badge-soft-green{background:#eaf8f2;color:#0d7656}
+.badge-soft-red{background:#fff0f0;color:#a53636}
+.sync-sub{font-size:9px;color:var(--gray-400);margin-top:2px;white-space:nowrap}
+@media print{
+  .exec-sync-disclaimer{font-size:7px;padding:5px 8px}
+}
+
 </style>
 </head>
 <body>
@@ -419,7 +440,7 @@ body{font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;ba
           <div class="exec-kpis">
             <div class="exec-kpi primary"><div class="exec-kpi-value green" id="ex-cump">0%</div><div class="exec-kpi-label">Cumplimiento nacional</div><div class="exec-kpi-sub" id="ex-cump-sub">0 de 0 capturas</div></div>
             <div class="exec-kpi"><div class="exec-kpi-value" id="ex-capturas">0 / 0</div><div class="exec-kpi-label">Capturas / meta diaria</div><div class="exec-kpi-sub">Meta: 6 por promotor operativo</div></div>
-            <div class="exec-kpi"><div class="exec-kpi-value" id="ex-activos">0 / 0</div><div class="exec-kpi-label">Promotores con actividad</div><div class="exec-kpi-sub" id="ex-sin">0 sin capturas</div></div>
+            <div class="exec-kpi"><div class="exec-kpi-value" id="ex-activos">0 / 0</div><div class="exec-kpi-label">Promotores con meta cumplida</div><div class="exec-kpi-sub" id="ex-sin">0 por debajo de meta</div></div>
             <div class="exec-kpi"><div class="exec-kpi-value" id="ex-calidad">—</div><div class="exec-kpi-label">Calidad de captura</div><div class="exec-kpi-sub" id="ex-calidad-sub">Sin alertas de captura</div></div>
           </div>
 
@@ -441,7 +462,7 @@ body{font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;ba
             </div>
             <div class="exec-metrics">
               <div class="exec-card-title" style="margin-bottom:3px">Indicadores operativos <span>Visitas del día</span></div>
-              <div class="exec-metric"><span>Visitas en curso</span><b id="ex-abiertas">0</b></div>
+              <div class="exec-metric"><span>Capturas offline validadas</span><b id="ex-offline">0</b></div>
               <div class="exec-metric"><span>Duración promedio</span><b id="ex-duracion">—</b></div>
               <div class="exec-metric"><span>Visitas ≥ 40 min</span><b id="ex-40">—</b></div>
               <div class="exec-metric"><span>Capturas todo en cero</span><b id="ex-cero">0</b></div>
@@ -450,13 +471,14 @@ body{font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;ba
           </div>
 
           <div class="exec-alert" id="ex-observacion"><strong>Resumen:</strong> Sin información suficiente para generar observaciones.</div>
+          <div class="exec-sync-disclaimer">El reporte contabiliza únicamente capturas recibidas y validadas en Supabase al momento del corte. Una captura que todavía exista solo en el teléfono del promotor no es visible hasta sincronizarse.</div>
           <div class="exec-footer"><span>Fuente: Plataforma Jumex Fragua · Supabase</span><span id="ex-footer-meta">Meta teórica: 6 capturas por promotor activo</span></div>
         </div>
       </section>
 
       <section class="tab" id="tab-dashboard">
         <div class="page-head">
-          <div><h1>Resumen operativo</h1><p>Cumplimiento de levantamientos terminados, no de simples entradas a tienda.</p></div>
+          <div><h1>Resumen operativo</h1><p>Seguimiento en tiempo real de visitas recibidas, incluyendo capturas online y offline ya sincronizadas.</p></div>
           <div class="actions"><input type="date" id="dash-fecha" onchange="loadDashboard()" style="padding:8px 10px;border:1px solid var(--gray-200);border-radius:8px;background:#fff"></div>
         </div>
 
@@ -466,6 +488,7 @@ body{font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;ba
           <div class="stat"><div class="stat-value" id="st-cumplimiento">0%</div><div class="stat-label">Cumplimiento</div></div>
           <div class="stat"><div class="stat-value amber" id="st-abiertas">0</div><div class="stat-label">Visitas en curso</div></div>
           <div class="stat"><div class="stat-value red" id="st-sin-captura">0</div><div class="stat-label">Promotores sin captura</div></div>
+          <div class="stat"><div class="stat-value" id="st-offline">0</div><div class="stat-label">Capturas offline sincronizadas</div></div>
         </div>
 
         <div class="grid-2">
@@ -480,6 +503,7 @@ body{font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;ba
               <div class="metric-line"><span>Visitas de 40 min o más</span><span id="m-40">—</span></div>
               <div class="metric-line"><span>Levantamientos todo en cero</span><span id="m-cero">—</span></div>
               <div class="metric-line"><span>Distancia GPS promedio al ingreso</span><span id="m-distancia">—</span></div>
+              <div class="metric-line"><span>Retraso promedio de sincronización offline</span><span id="m-sync-delay">—</span></div>
             </div>
           </div>
         </div>
@@ -491,12 +515,12 @@ body{font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;ba
 
         <div class="table-wrap">
           <div class="table-title">Últimas capturas <small>Haz clic en Ver para revisar el levantamiento</small></div>
-          <table><thead><tr><th>Hora</th><th>Promotor</th><th>Ruta</th><th>Tienda</th><th>Duración</th><th>GPS ingreso</th><th>Todo cero</th><th></th></tr></thead><tbody id="tabla-recientes"></tbody></table>
+          <table><thead><tr><th>Hora</th><th>Promotor</th><th>Ruta</th><th>Tienda</th><th>Duración</th><th>Origen</th><th>Sincronización</th><th>GPS</th><th>Todo cero</th><th></th></tr></thead><tbody id="tabla-recientes"></tbody></table>
         </div>
       </section>
 
       <section class="tab" id="tab-visitas">
-        <div class="page-head"><div><h1>Visitas y capturas</h1><p>Consulta entradas, salidas y el levantamiento asociado.</p></div></div>
+        <div class="page-head"><div><h1>Visitas y capturas</h1><p>Consulta entradas, salidas, origen de captura, sincronización y validación GPS.</p></div></div>
         <div class="filters">
           <div class="filter"><label>Desde</label><input type="date" id="vis-desde"></div>
           <div class="filter"><label>Hasta</label><input type="date" id="vis-hasta"></div>
@@ -504,11 +528,12 @@ body{font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;ba
           <div class="filter"><label>Ruta</label><select id="vis-ruta"><option value="">Todas</option></select></div>
           <div class="filter"><label>Promotor</label><select id="vis-promotor"><option value="">Todos</option></select></div>
           <div class="filter"><label>Estado</label><select id="vis-estado"><option value="">Todos</option><option value="COMPLETADA">Completada</option><option value="EN_VISITA">En curso</option></select></div>
+          <div class="filter"><label>Origen</label><select id="vis-origen"><option value="">Todos</option><option value="ONLINE">Online</option><option value="OFFLINE">Offline</option></select></div>
           <button class="btn btn-primary" onclick="loadVisitasPeriodo()">Consultar</button>
         </div>
         <div class="table-wrap">
           <div class="table-title">Registros <small id="vis-count">0 resultados</small></div>
-          <table><thead><tr><th>Fecha</th><th>Entrada</th><th>Salida</th><th>Promotor</th><th>Región</th><th>Ruta</th><th>Tienda</th><th>Duración</th><th>Distancia</th><th>Estado</th><th></th></tr></thead><tbody id="tabla-visitas"></tbody></table>
+          <table><thead><tr><th>Fecha</th><th>Entrada</th><th>Salida</th><th>Promotor</th><th>Región</th><th>Ruta</th><th>Tienda</th><th>Duración</th><th>Origen</th><th>Sincronizada</th><th>GPS</th><th>Estado</th><th></th></tr></thead><tbody id="tabla-visitas"></tbody></table>
         </div>
       </section>
 
@@ -534,7 +559,7 @@ body{font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;ba
         <div class="page-head"><div><h1>Exportar</h1><p>Genera el levantamiento en formato compatible con la estructura BDD que utilizabas con Google Forms.</p></div></div>
         <div class="export-card">
           <h3>Reporte de levantamientos</h3>
-          <p>Incluye una hoja con las 33 columnas del formulario original, además de visitas, cumplimiento por promotor y resumen por región.</p>
+          <p>Incluye una hoja con las 33 columnas del formulario original, además de visitas con origen online/offline, hora de sincronización, validación GPS, cumplimiento por promotor y resumen por región.</p>
           <div class="filters" style="border:0;padding:0;margin:0 0 12px">
             <div class="filter"><label>Desde</label><input type="date" id="exp-desde"></div>
             <div class="filter"><label>Hasta</label><input type="date" id="exp-hasta"></div>
@@ -709,6 +734,49 @@ function localISODate(d){return `${d.getFullYear()}-${String(d.getMonth()+1).pad
 function datePretty(ymd){const d=new Date(`${ymd}T12:00:00`);return d.toLocaleDateString('es-MX',{weekday:'long',day:'numeric',month:'long',year:'numeric'})}
 function shortDay(ymd){const d=new Date(`${ymd}T12:00:00`);return d.toLocaleDateString('es-MX',{weekday:'short',day:'numeric'}).replace('.','')}
 
+
+function visitMode(v){
+  const m=String(v?.modo_registro||'').toUpperCase();
+  return m==='OFFLINE'?'OFFLINE':m==='ONLINE'?'ONLINE':'LEGACY';
+}
+function syncDelayMinutes(v){
+  if(!v?.sincronizado_at)return null;
+  const base=v.hora_fin_dispositivo||v.hora_fin||v.hora_inicio_dispositivo||v.hora_inicio;
+  if(!base)return null;
+  const ms=new Date(v.sincronizado_at)-new Date(base);
+  return Number.isFinite(ms)?Math.max(0,Math.round(ms/60000)):null;
+}
+function formatSyncDelay(min){
+  if(min==null)return '—';
+  if(min<1)return '<1 min';
+  if(min<60)return `${min} min`;
+  const h=Math.floor(min/60),m=min%60;
+  return m?`${h} h ${m} min`:`${h} h`;
+}
+function originBadge(v){
+  const m=visitMode(v);
+  if(m==='OFFLINE')return '<span class="badge badge-blue">Offline</span>';
+  if(m==='ONLINE')return '<span class="badge badge-green">Online</span>';
+  return '<span class="badge badge-gray">Anterior</span>';
+}
+function gpsValidation(v){
+  const d=Number(v?.distancia_entrada_m),p=Number(v?.precision_entrada_m);
+  if(!Number.isFinite(d))return {ok:null,label:'Sin dato'};
+  const tol=150+(Number.isFinite(p)?Math.min(Math.max(p,0),120):0);
+  return d<=tol?{ok:true,label:'Validado'}:{ok:false,label:'Revisar'};
+}
+function gpsBadge(v){
+  const g=gpsValidation(v);
+  if(g.ok===true)return `<span class="badge badge-soft-green">GPS validado</span><div class="sync-sub">${Math.round(Number(v.distancia_entrada_m))} m · ±${Number.isFinite(Number(v.precision_entrada_m))?Math.round(Number(v.precision_entrada_m)):'—'} m</div>`;
+  if(g.ok===false)return `<span class="badge badge-soft-red">GPS revisar</span><div class="sync-sub">${Math.round(Number(v.distancia_entrada_m))} m</div>`;
+  return '<span class="badge badge-gray">Sin GPS</span>';
+}
+function syncCell(v){
+  if(!v?.sincronizado_at)return '<span class="badge badge-amber">Pendiente</span>';
+  const delay=syncDelayMinutes(v);
+  return `<span class="badge badge-soft-green">Recibida</span><div class="sync-sub">${fmtDateTime(v.sincronizado_at)}${visitMode(v)==='OFFLINE'&&delay!=null?' · +'+formatSyncDelay(delay):''}</div>`;
+}
+
 async function loadExecutive(showMsg=true){
   const fecha=document.getElementById('exec-fecha').value||todayLocal();
   const endDay=new Date(`${fecha}T12:00:00`);const startDay=new Date(endDay);startDay.setDate(startDay.getDate()-6);
@@ -728,30 +796,70 @@ async function loadExecutive(showMsg=true){
 
 function renderExecutive(fecha,trendDesde){
   const ops=db.promotores.filter(isOperativePromotor),lev=db.execLevantamientos,vis=db.execVisitas;
-  const meta=ops.length*META_DIARIA,cump=pct(lev.length,meta);const byProm={};lev.forEach(l=>{byProm[l.codigo_promotor]=(byProm[l.codigo_promotor]||0)+1});
-  const conActividad=ops.filter(p=>(byProm[p.numero_empleado]||0)>0).length,sin=ops.length-conActividad;
-  const zeros=lev.filter(l=>l.confirmado_todo_cero===true).length;const calidad=lev.length?pct(lev.length-zeros,lev.length):null;
-  const abiertas=vis.filter(v=>!v.hora_fin||v.estado==='EN_VISITA').length;const completadas=vis.filter(v=>v.hora_fin);const durs=completadas.map(v=>Number(v.duracion_min)).filter(Number.isFinite);const avg=durs.length?durs.reduce((a,b)=>a+b,0)/durs.length:null;const c40=completadas.filter(v=>Number(v.duracion_min)>=40).length;const dists=vis.map(v=>Number(v.distancia_entrada_m)).filter(Number.isFinite);const avgDist=dists.length?dists.reduce((a,b)=>a+b,0)/dists.length:null;
+  const meta=ops.length*META_DIARIA,cump=pct(lev.length,meta);
+  const byProm={};lev.forEach(l=>{byProm[l.codigo_promotor]=(byProm[l.codigo_promotor]||0)+1});
+  const conActividad=ops.filter(p=>(byProm[p.numero_empleado]||0)>0).length;
+  const sin=ops.length-conActividad;
+  const metaCumplida=ops.filter(p=>(byProm[p.numero_empleado]||0)>=META_DIARIA).length;
+  const debajoMeta=Math.max(0,ops.length-metaCumplida);
+
+  const zeros=lev.filter(l=>l.confirmado_todo_cero===true).length;
+  const calidad=lev.length?pct(lev.length-zeros,lev.length):null;
+  const completadas=vis.filter(v=>v.hora_fin);
+  const offline=completadas.filter(v=>visitMode(v)==='OFFLINE');
+  const durs=completadas.map(v=>Number(v.duracion_min)).filter(Number.isFinite);
+  const avg=durs.length?durs.reduce((a,b)=>a+b,0)/durs.length:null;
+  const c40=completadas.filter(v=>Number(v.duracion_min)>=40).length;
+  const dists=completadas.map(v=>Number(v.distancia_entrada_m)).filter(Number.isFinite);
+  const avgDist=dists.length?dists.reduce((a,b)=>a+b,0)/dists.length:null;
 
   document.getElementById('exec-date-label').textContent='Corte: '+datePretty(fecha);
   document.getElementById('exec-cut-time').textContent=fecha===todayLocal()?new Date().toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'}):'Día cerrado';
-  const elC=document.getElementById('ex-cump');elC.textContent=cump.toFixed(1)+'%';elC.className='exec-kpi-value '+(cump>=90?'green':cump>=60?'amber':'red');
+  const elC=document.getElementById('ex-cump');
+  elC.textContent=cump.toFixed(1)+'%';
+  elC.className='exec-kpi-value '+(cump>=90?'green':cump>=60?'amber':'red');
   document.getElementById('ex-cump-sub').textContent=`${lev.length} de ${meta} capturas esperadas`;
   document.getElementById('ex-capturas').textContent=`${lev.length} / ${meta}`;
-  document.getElementById('ex-activos').textContent=`${conActividad} / ${ops.length}`;document.getElementById('ex-sin').textContent=`${sin} sin capturas`;
-  document.getElementById('ex-calidad').textContent=calidad===null?'—':calidad.toFixed(1)+'%';document.getElementById('ex-calidad').className='exec-kpi-value '+(calidad===null?'':calidad>=95?'green':calidad>=85?'amber':'red');document.getElementById('ex-calidad-sub').textContent=zeros?`${zeros} captura${zeros===1?'':'s'} con alerta todo en cero`:'Sin alertas todo en cero';
-  document.getElementById('ex-abiertas').textContent=abiertas;document.getElementById('ex-duracion').textContent=avg===null?'—':avg.toFixed(1)+' min';document.getElementById('ex-40').textContent=completadas.length?`${c40} / ${completadas.length} (${pct(c40,completadas.length).toFixed(1)}%)`:'—';document.getElementById('ex-cero').textContent=zeros;document.getElementById('ex-dist').textContent=avgDist===null?'—':Math.round(avgDist)+' m';
+  document.getElementById('ex-activos').textContent=`${metaCumplida} / ${ops.length}`;
+  document.getElementById('ex-sin').textContent=`${debajoMeta} por debajo de meta`;
+  document.getElementById('ex-calidad').textContent=calidad===null?'—':calidad.toFixed(1)+'%';
+  document.getElementById('ex-calidad').className='exec-kpi-value '+(calidad===null?'':calidad>=95?'green':calidad>=85?'amber':'red');
+  document.getElementById('ex-calidad-sub').textContent=zeros?`${zeros} captura${zeros===1?'':'s'} con alerta todo en cero`:'Sin alertas todo en cero';
 
-  const regions={};ops.forEach(p=>{const z=normalizedZone(p);if(!regions[z])regions[z]={prom:0,capt:0};regions[z].prom++});lev.forEach(l=>{const p=db.promotores.find(x=>x.numero_empleado===l.codigo_promotor);const z=p?normalizedZone(p):(l.region||'SIN REGIÓN').toUpperCase();if(!regions[z])regions[z]={prom:0,capt:0};regions[z].capt++});
-  const regEntries=Object.entries(regions).sort((a,b)=>b[1].prom-a[1].prom);document.getElementById('ex-region-sub').textContent=`${ops.length} promotores operativos`;
-  document.getElementById('ex-regions').innerHTML=regEntries.length?regEntries.map(([z,r])=>{const m=r.prom*META_DIARIA,pc=pct(r.capt,m);return `<div class="exec-region"><div class="exec-region-name">${escapeHtml(z)}</div><div><div class="exec-region-track"><div class="exec-region-fill" style="width:${Math.min(100,pc)}%"></div></div><div class="exec-region-meta">${r.capt} / ${m} · ${r.prom} promotores</div></div><div class="exec-region-pct ${pc<60?'red':pc>=90?'green':''}">${pc.toFixed(1)}%</div></div>`}).join(''):'<div class="empty">Sin promotores operativos.</div>';
+  document.getElementById('ex-offline').textContent=offline.length;
+  document.getElementById('ex-duracion').textContent=avg===null?'—':avg.toFixed(1)+' min';
+  document.getElementById('ex-40').textContent=completadas.length?`${c40} / ${completadas.length} (${pct(c40,completadas.length).toFixed(1)}%)`:'—';
+  document.getElementById('ex-cero').textContent=zeros;
+  document.getElementById('ex-dist').textContent=avgDist===null?'—':Math.round(avgDist)+' m';
+
+  const regions={};
+  ops.forEach(p=>{const z=normalizedZone(p);if(!regions[z])regions[z]={prom:0,capt:0};regions[z].prom++});
+  lev.forEach(l=>{
+    const p=db.promotores.find(x=>x.numero_empleado===l.codigo_promotor);
+    const z=p?normalizedZone(p):(l.region||'SIN REGIÓN').toUpperCase();
+    if(!regions[z])regions[z]={prom:0,capt:0};
+    regions[z].capt++;
+  });
+  const regEntries=Object.entries(regions).sort((a,b)=>b[1].prom-a[1].prom);
+  document.getElementById('ex-region-sub').textContent=`${ops.length} promotores operativos`;
+  document.getElementById('ex-regions').innerHTML=regEntries.length?regEntries.map(([z,r])=>{
+    const m=r.prom*META_DIARIA,pc=pct(r.capt,m);
+    return `<div class="exec-region"><div class="exec-region-name">${escapeHtml(z)}</div><div><div class="exec-region-track"><div class="exec-region-fill" style="width:${Math.min(100,pc)}%"></div></div><div class="exec-region-meta">${r.capt} / ${m} · ${r.prom} promotores</div></div><div class="exec-region-pct ${pc<60?'red':pc>=90?'green':''}">${pc.toFixed(1)}%</div></div>`
+  }).join(''):'<div class="empty">Sin promotores operativos.</div>';
 
   const ranked=ops.map(p=>{const c=byProm[p.numero_empleado]||0;return {p,c,pc:pct(c,META_DIARIA)}}).sort((a,b)=>a.pc-b.pc||a.p.nombre_completo.localeCompare(b.p.nombre_completo));
-  const attention=ranked.filter(x=>x.c<META_DIARIA).slice(0,5);document.getElementById('ex-bottom-promoters').innerHTML=attention.length?attention.map(x=>`<div class="exec-list-row"><div><b>${escapeHtml(x.p.nombre_completo)}</b><div class="route">${escapeHtml(normalizedZone(x.p))} · ${escapeHtml(x.p.ruta||'Sin ruta')}</div></div><div class="num">${x.c}/${META_DIARIA}</div><div class="pc ${x.pc<50?'red':x.pc>=100?'green':''}">${x.pc.toFixed(1)}%</div></div>`).join(''):'<div class="empty" style="padding:18px">Todos los promotores cumplieron su meta.</div>';
+  const attention=ranked.filter(x=>x.c<META_DIARIA).slice(0,5);
+  document.getElementById('ex-bottom-promoters').innerHTML=attention.length?attention.map(x=>`<div class="exec-list-row"><div><b>${escapeHtml(x.p.nombre_completo)}</b><div class="route">${escapeHtml(normalizedZone(x.p))} · ${escapeHtml(x.p.ruta||'Sin ruta')}</div></div><div class="num">${x.c}/${META_DIARIA}</div><div class="pc ${x.pc<50?'red':x.pc>=100?'green':''}">${x.pc.toFixed(1)}%</div></div>`).join(''):'<div class="empty" style="padding:18px">Todos los promotores cumplieron su meta.</div>';
 
   renderExecutiveTrend(fecha,trendDesde,ops.length);
+
   const worstRegion=regEntries.map(([z,r])=>({z,pc:pct(r.capt,r.prom*META_DIARIA),capt:r.capt,meta:r.prom*META_DIARIA})).sort((a,b)=>a.pc-b.pc)[0];
-  const notes=[];if(meta)notes.push(`cumplimiento nacional de <strong>${cump.toFixed(1)}%</strong> (${lev.length}/${meta})`);if(worstRegion&&regEntries.length>1)notes.push(`<strong>${escapeHtml(worstRegion.z)}</strong> presenta el menor avance con ${worstRegion.pc.toFixed(1)}%`);if(sin)notes.push(`<strong>${sin}</strong> promotor${sin===1?'':'es'} sin capturas`);if(abiertas)notes.push(`<strong>${abiertas}</strong> visita${abiertas===1?'':'s'} en curso`);if(zeros)notes.push(`<strong>${zeros}</strong> captura${zeros===1?'':'s'} marcada${zeros===1?'':'s'} como todo en cero`);
+  const notes=[];
+  if(meta)notes.push(`cumplimiento nacional de <strong>${cump.toFixed(1)}%</strong> (${lev.length}/${meta})`);
+  if(worstRegion&&regEntries.length>1)notes.push(`<strong>${escapeHtml(worstRegion.z)}</strong> presenta el menor avance con ${worstRegion.pc.toFixed(1)}%`);
+  if(debajoMeta)notes.push(`<strong>${debajoMeta}</strong> promotor${debajoMeta===1?'':'es'} por debajo de la meta`);
+  if(offline.length)notes.push(`<strong>${offline.length}</strong> captura${offline.length===1?'':'s'} offline sincronizada${offline.length===1?'':'s'} y validada${offline.length===1?'':'s'}`);
+  if(zeros)notes.push(`<strong>${zeros}</strong> captura${zeros===1?'':'s'} marcada${zeros===1?'':'s'} como todo en cero`);
   document.getElementById('ex-observacion').innerHTML='<strong>Resumen:</strong> '+(notes.length?notes.join(' · ')+'.':'Sin incidencias relevantes para el corte seleccionado.');
   document.getElementById('ex-footer-meta').textContent=`Meta teórica: ${ops.length} promotores × ${META_DIARIA} = ${meta} capturas`;
 }
@@ -837,7 +945,7 @@ function renderDashboard(){
   const meta=ops.length*META_DIARIA;const cump=pct(lev.length,meta);const abiertas=vis.filter(v=>!v.hora_fin||v.estado==='EN_VISITA').length;
   const byProm={};lev.forEach(l=>{byProm[l.codigo_promotor]=(byProm[l.codigo_promotor]||0)+1});
   const sin=ops.filter(p=>(byProm[p.numero_empleado]||0)===0).length;
-  document.getElementById('st-capturas').textContent=lev.length;document.getElementById('st-meta').textContent=meta;document.getElementById('st-cumplimiento').textContent=cump.toFixed(1)+'%';document.getElementById('st-cumplimiento').className='stat-value '+(cump>=90?'green':cump>=60?'amber':'red');document.getElementById('st-abiertas').textContent=abiertas;document.getElementById('st-sin-captura').textContent=sin;
+  document.getElementById('st-capturas').textContent=lev.length;document.getElementById('st-meta').textContent=meta;document.getElementById('st-cumplimiento').textContent=cump.toFixed(1)+'%';document.getElementById('st-cumplimiento').className='stat-value '+(cump>=90?'green':cump>=60?'amber':'red');document.getElementById('st-abiertas').textContent=abiertas;document.getElementById('st-sin-captura').textContent=sin;document.getElementById('st-offline').textContent=vis.filter(v=>v.hora_fin&&visitMode(v)==='OFFLINE').length;
 
   const regions={};ops.forEach(p=>{const z=normalizedZone(p);if(!regions[z])regions[z]={prom:0,capt:0};regions[z].prom++});
   lev.forEach(l=>{const p=db.promotores.find(x=>x.numero_empleado===l.codigo_promotor);const z=p?normalizedZone(p):(l.region||'SIN REGIÓN').toUpperCase();if(!regions[z])regions[z]={prom:0,capt:0};regions[z].capt++});
@@ -846,10 +954,12 @@ function renderDashboard(){
   document.getElementById('region-sub').textContent=`${ops.length} promotores operativos`;
 
   const completadas=vis.filter(v=>v.hora_fin);const durs=completadas.map(v=>Number(v.duracion_min)).filter(Number.isFinite);const avg=durs.length?durs.reduce((a,b)=>a+b,0)/durs.length:null;const cumple40=completadas.filter(v=>Number(v.duracion_min)>=40).length;const zeros=lev.filter(l=>l.confirmado_todo_cero===true).length;const dists=vis.map(v=>Number(v.distancia_entrada_m)).filter(Number.isFinite);const avgDist=dists.length?dists.reduce((a,b)=>a+b,0)/dists.length:null;
+  const offlineDone=completadas.filter(v=>visitMode(v)==='OFFLINE');const syncDelays=offlineDone.map(syncDelayMinutes).filter(Number.isFinite);const avgSync=syncDelays.length?syncDelays.reduce((a,b)=>a+b,0)/syncDelays.length:null;
   document.getElementById('m-duracion').textContent=avg===null?'—':`${avg.toFixed(1)} min`;
   document.getElementById('m-40').textContent=completadas.length?`${cumple40} / ${completadas.length} (${pct(cumple40,completadas.length).toFixed(1)}%)`:'—';
   document.getElementById('m-cero').textContent=zeros;
   document.getElementById('m-distancia').textContent=avgDist===null?'—':`${Math.round(avgDist)} m`;
+  document.getElementById('m-sync-delay').textContent=avgSync===null?'—':formatSyncDelay(Math.round(avgSync));
 
   document.getElementById('prom-cump-sub').textContent=`${ops.length} promotores · meta ${META_DIARIA} c/u`;
   document.getElementById('tabla-cumplimiento').innerHTML=ops.map(p=>{
@@ -858,7 +968,7 @@ function renderDashboard(){
   }).join('')||'<tr><td colspan="9" class="empty">Sin promotores operativos.</td></tr>';
 
   const visitMap=new Map(vis.map(v=>[Number(v.id),v]));
-  document.getElementById('tabla-recientes').innerHTML=lev.slice(0,15).map(l=>{const v=visitMap.get(Number(l.visita_id));return `<tr><td>${fmtTime(l.marca_temporal)}</td><td><b>${escapeHtml(l.nombre_promotor)}</b><div class="muted mono">${escapeHtml(l.codigo_promotor)}</div></td><td>${escapeHtml(l.ruta||v?.ruta||'—')}</td><td>${escapeHtml(l.nombre_tienda)}</td><td>${v?.duracion_min!=null?escapeHtml(v.duracion_min)+' min':'—'}</td><td>${v?.distancia_entrada_m!=null?Math.round(Number(v.distancia_entrada_m))+' m':'—'}</td><td>${l.confirmado_todo_cero?'<span class="badge badge-amber">Sí</span>':'<span class="badge badge-gray">No</span>'}</td><td><button class="btn btn-outline btn-sm" onclick="showDetalle(${Number(v?.id||l.visita_id)})">Ver</button></td></tr>`}).join('')||'<tr><td colspan="8" class="empty">Todavía no hay capturas para esta fecha.</td></tr>';
+  document.getElementById('tabla-recientes').innerHTML=lev.slice(0,15).map(l=>{const v=visitMap.get(Number(l.visita_id));return `<tr><td>${fmtTime(l.marca_temporal)}</td><td><b>${escapeHtml(l.nombre_promotor)}</b><div class="muted mono">${escapeHtml(l.codigo_promotor)}</div></td><td>${escapeHtml(l.ruta||v?.ruta||'—')}</td><td>${escapeHtml(l.nombre_tienda)}</td><td>${v?.duracion_min!=null?escapeHtml(v.duracion_min)+' min':'—'}</td><td>${v?originBadge(v):'—'}</td><td>${v?syncCell(v):'—'}</td><td>${v?gpsBadge(v):'—'}</td><td>${l.confirmado_todo_cero?'<span class="badge badge-amber">Sí</span>':'<span class="badge badge-gray">No</span>'}</td><td><button class="btn btn-outline btn-sm" onclick="showDetalle(${Number(v?.id||l.visita_id)})">Ver</button></td></tr>`}).join('')||'<tr><td colspan="10" class="empty">Todavía no hay capturas para esta fecha.</td></tr>';
 }
 
 async function loadVisitasPeriodo(){
@@ -873,22 +983,43 @@ async function loadVisitasPeriodo(){
 }
 
 function renderVisitas(){
-  const region=document.getElementById('vis-region').value,ruta=document.getElementById('vis-ruta').value,prom=document.getElementById('vis-promotor').value,estado=document.getElementById('vis-estado').value;
+  const region=document.getElementById('vis-region').value,ruta=document.getElementById('vis-ruta').value,prom=document.getElementById('vis-promotor').value,estado=document.getElementById('vis-estado').value,origen=document.getElementById('vis-origen').value;
   const promMap=new Map(db.promotores.map(p=>[p.numero_empleado,p]));
   const rows=db.visitas.filter(v=>{
-    const p=promMap.get(v.codigo_promotor);const z=p?normalizedZone(p):(v.region||'').toUpperCase();const st=v.hora_fin?'COMPLETADA':'EN_VISITA';
-    return (!region||z===region)&&(!ruta||v.ruta===ruta)&&(!prom||v.codigo_promotor===prom)&&(!estado||st===estado);
+    const p=promMap.get(v.codigo_promotor);
+    const z=p?normalizedZone(p):(v.region||'').toUpperCase();
+    const st=v.hora_fin?'COMPLETADA':'EN_VISITA';
+    const mode=visitMode(v);
+    return (!region||z===region)&&(!ruta||v.ruta===ruta)&&(!prom||v.codigo_promotor===prom)&&(!estado||st===estado)&&(!origen||mode===origen);
   });
   document.getElementById('vis-count').textContent=`${rows.length} resultado${rows.length===1?'':'s'}`;
-  document.getElementById('tabla-visitas').innerHTML=rows.map(v=>{const p=promMap.get(v.codigo_promotor);const st=v.hora_fin?'COMPLETADA':'EN_VISITA';return `<tr><td>${fmtDate(v.hora_inicio)}</td><td>${fmtTime(v.hora_inicio)}</td><td>${fmtTime(v.hora_fin)}</td><td><b>${escapeHtml(v.nombre_promotor)}</b><div class="muted mono">${escapeHtml(v.codigo_promotor)}</div></td><td>${escapeHtml(p?normalizedZone(p):(v.region||'—'))}</td><td>${escapeHtml(v.ruta||'—')}</td><td>${escapeHtml(v.nombre_tienda)}<div class="muted mono">${escapeHtml(v.id_tienda||'')}</div></td><td>${v.duracion_min!=null?escapeHtml(v.duracion_min)+' min':'—'}</td><td>${v.distancia_entrada_m!=null?Math.round(Number(v.distancia_entrada_m))+' m':'—'}</td><td>${st==='COMPLETADA'?'<span class="badge badge-green">Completada</span>':'<span class="badge badge-amber">En curso</span>'}</td><td><button class="btn btn-outline btn-sm" onclick="showDetalle(${Number(v.id)})">Ver</button></td></tr>`}).join('')||'<tr><td colspan="11" class="empty">No hay visitas con esos filtros.</td></tr>';
+  document.getElementById('tabla-visitas').innerHTML=rows.map(v=>{
+    const p=promMap.get(v.codigo_promotor);
+    const st=v.hora_fin?'COMPLETADA':'EN_VISITA';
+    return `<tr>
+      <td>${fmtDate(v.hora_inicio)}</td>
+      <td>${fmtTime(v.hora_inicio_dispositivo||v.hora_inicio)}</td>
+      <td>${fmtTime(v.hora_fin_dispositivo||v.hora_fin)}</td>
+      <td><b>${escapeHtml(v.nombre_promotor)}</b><div class="muted mono">${escapeHtml(v.codigo_promotor)}</div></td>
+      <td>${escapeHtml(p?normalizedZone(p):(v.region||'—'))}</td>
+      <td>${escapeHtml(v.ruta||'—')}</td>
+      <td>${escapeHtml(v.nombre_tienda)}<div class="muted mono">${escapeHtml(v.id_tienda||'')}</div></td>
+      <td>${v.duracion_min!=null?escapeHtml(v.duracion_min)+' min':'—'}</td>
+      <td>${originBadge(v)}</td>
+      <td>${syncCell(v)}</td>
+      <td>${gpsBadge(v)}</td>
+      <td>${st==='COMPLETADA'?'<span class="badge badge-green">Completada</span>':'<span class="badge badge-amber">En curso</span>'}</td>
+      <td><button class="btn btn-outline btn-sm" onclick="showDetalle(${Number(v.id)})">Ver</button></td>
+    </tr>`
+  }).join('')||'<tr><td colspan="13" class="empty">No hay visitas con esos filtros.</td></tr>';
 }
-['vis-region','vis-ruta','vis-promotor','vis-estado'].forEach(id=>document.getElementById(id).addEventListener('change',renderVisitas));
+['vis-region','vis-ruta','vis-promotor','vis-estado','vis-origen'].forEach(id=>document.getElementById(id).addEventListener('change',renderVisitas));
 
 function findLevantamiento(visitaId){return [...db.levantamientos,...db.dashLevantamientos].find(l=>Number(l.visita_id)===Number(visitaId))}
 function findVisita(visitaId){return [...db.visitas,...db.dashVisitas].find(v=>Number(v.id)===Number(visitaId))}
 function showDetalle(id){
   const v=findVisita(id);if(!v){showToast('No se encontró la visita.');return}const l=findLevantamiento(id);
-  const general=`<div class="detail-grid"><div class="detail-box"><div class="detail-label">Promotor</div><div class="detail-value">${escapeHtml(v.nombre_promotor)} · ${escapeHtml(v.codigo_promotor)}</div></div><div class="detail-box"><div class="detail-label">Tienda</div><div class="detail-value">${escapeHtml(v.nombre_tienda)} · ID ${escapeHtml(v.id_tienda)}</div></div><div class="detail-box"><div class="detail-label">Entrada / salida</div><div class="detail-value">${fmtDateTime(v.hora_inicio)} → ${fmtDateTime(v.hora_fin)}</div></div><div class="detail-box"><div class="detail-label">Duración</div><div class="detail-value">${v.duracion_min!=null?escapeHtml(v.duracion_min)+' min':'Visita abierta'}</div></div><div class="detail-box"><div class="detail-label">Ruta / región</div><div class="detail-value">${escapeHtml(v.ruta||'—')} · ${escapeHtml(v.region||'—')}</div></div><div class="detail-box"><div class="detail-label">GPS de entrada</div><div class="detail-value">Distancia ${v.distancia_entrada_m!=null?Math.round(Number(v.distancia_entrada_m))+' m':'—'} · Precisión ${v.precision_entrada_m!=null?Math.round(Number(v.precision_entrada_m))+' m':'—'}</div></div></div>`;
+  const delay=syncDelayMinutes(v);const general=`<div class="detail-grid"><div class="detail-box"><div class="detail-label">Promotor</div><div class="detail-value">${escapeHtml(v.nombre_promotor)} · ${escapeHtml(v.codigo_promotor)}</div></div><div class="detail-box"><div class="detail-label">Tienda</div><div class="detail-value">${escapeHtml(v.nombre_tienda)} · ID ${escapeHtml(v.id_tienda)}</div></div><div class="detail-box"><div class="detail-label">Entrada / salida</div><div class="detail-value">${fmtDateTime(v.hora_inicio_dispositivo||v.hora_inicio)} → ${fmtDateTime(v.hora_fin_dispositivo||v.hora_fin)}</div></div><div class="detail-box"><div class="detail-label">Duración</div><div class="detail-value">${v.duracion_min!=null?escapeHtml(v.duracion_min)+' min':'Visita abierta'}</div></div><div class="detail-box"><div class="detail-label">Ruta / región</div><div class="detail-value">${escapeHtml(v.ruta||'—')} · ${escapeHtml(v.region||'—')}</div></div><div class="detail-box"><div class="detail-label">GPS de entrada</div><div class="detail-value">Distancia ${v.distancia_entrada_m!=null?Math.round(Number(v.distancia_entrada_m))+' m':'—'} · Precisión ${v.precision_entrada_m!=null?Math.round(Number(v.precision_entrada_m))+' m':'—'} · ${gpsValidation(v).label}</div></div><div class="detail-box"><div class="detail-label">Origen de captura</div><div class="detail-value">${visitMode(v)}</div></div><div class="detail-box"><div class="detail-label">Sincronización</div><div class="detail-value">${v.sincronizado_at?fmtDateTime(v.sincronizado_at)+(visitMode(v)==='OFFLINE'&&delay!=null?' · retraso '+formatSyncDelay(delay):''):'Pendiente'}</div></div></div>`;
   if(!l){document.getElementById('detalle-body').innerHTML=general+'<div class="help" style="margin-top:16px">Esta visita aún no tiene levantamiento asociado. Si está en curso, el promotor debe completar el formulario para registrar la salida.</div>';openModal('modal-detalle');return}
   const inv=(label,val)=>`<div class="inv"><b>${escapeHtml(label)}</b><span>${escapeHtml(val)}</span></div>`;
   document.getElementById('detalle-body').innerHTML=general+
@@ -946,7 +1077,7 @@ async function exportarDatos(){
       'TIENES EXHIBICION ADICIONAL DE HYDROLIT? (EN MOSTRADOR, CAJAS, ARETEROS ETC.)':yn(l.hydrolit_exhibicion_adicional),'CUANTAS EXHIBICIONES ADICIONALES DE HYDROLIT?':l.hydrolit_cantidad_exhibiciones,
       'INVENTARIO TOTAL BLIST UVA':l.inventario_blist_uva,'INVENTARIO TOTAL BLIST LIMONADA ROSA':l.inventario_blist_limonada_rosa,'¿BLIST ESTA EN ANAQUEL?':yn(l.blist_anaquel),'¿CUANTOS FRENTES DE BLIST HAY EN ANAQUEL?':l.blist_frentes_anaquel,'¿BLIST ESTA EN REFRIGERADOR?':yn(l.blist_refrigerador),'¿CUANTOS FRENTES DE BLIST HAY EN REFRIGERADOR?':l.blist_frentes_refrigerador,'¿HAY EXHIBICIÓN ADICIONAL DE BLIST?':yn(l.blist_exhibicion_adicional),'¿CUANTAS EXHIBICIONES ADICIONALES DE BLIST HAY?':l.blist_cantidad_exhibiciones
     }});
-    const visitRows=vis.map(v=>({'ID visita':v.id,'Código':v.codigo_promotor,'Promotor':v.nombre_promotor,'Región':v.region,'Ruta':v.ruta,'ID tienda':v.id_tienda,'Tienda':v.nombre_tienda,'Fecha':fmtDate(v.hora_inicio),'Entrada':fmtTime(v.hora_inicio),'Salida':fmtTime(v.hora_fin),'Duración (min)':v.duracion_min,'Cumple ≥40 min':v.duracion_min!=null?(Number(v.duracion_min)>=40?'Sí':'No'):'—','Distancia ingreso (m)':v.distancia_entrada_m!=null?Math.round(Number(v.distancia_entrada_m)):'','Precisión GPS (m)':v.precision_entrada_m!=null?Math.round(Number(v.precision_entrada_m)):'','Estado':v.hora_fin?'COMPLETADA':'EN_VISITA'}));
+    const visitRows=vis.map(v=>({'ID visita':v.id,'Código':v.codigo_promotor,'Promotor':v.nombre_promotor,'Región':v.region,'Ruta':v.ruta,'ID tienda':v.id_tienda,'Tienda':v.nombre_tienda,'Fecha':fmtDate(v.hora_inicio_dispositivo||v.hora_inicio),'Entrada dispositivo':fmtTime(v.hora_inicio_dispositivo||v.hora_inicio),'Salida dispositivo':fmtTime(v.hora_fin_dispositivo||v.hora_fin),'Duración (min)':v.duracion_min,'Cumple ≥40 min':v.duracion_min!=null?(Number(v.duracion_min)>=40?'Sí':'No'):'—','Origen':visitMode(v),'Sincronizado en':v.sincronizado_at?fmtDateTime(v.sincronizado_at):'','Retraso sincronización':visitMode(v)==='OFFLINE'?formatSyncDelay(syncDelayMinutes(v)):'—','Distancia ingreso (m)':v.distancia_entrada_m!=null?Math.round(Number(v.distancia_entrada_m)):'','Precisión GPS (m)':v.precision_entrada_m!=null?Math.round(Number(v.precision_entrada_m)):'','Validación GPS servidor':gpsValidation(v).label,'Estado':v.hora_fin?'COMPLETADA':'EN_VISITA'}));
     const days=[];let cur=new Date(`${desde}T00:00:00`),last=new Date(`${hasta}T00:00:00`);while(cur<=last){days.push(`${cur.getFullYear()}-${String(cur.getMonth()+1).padStart(2,'0')}-${String(cur.getDate()).padStart(2,'0')}`);cur.setDate(cur.getDate()+1)}
     const ops=db.promotores.filter(isOperativePromotor),cumRows=[];for(const day of days){for(const p of ops){const c=lev.filter(l=>l.codigo_promotor===p.numero_empleado&&new Date(l.marca_temporal).toLocaleDateString('en-CA')===day).length;cumRows.push({'Fecha':day,'Código':p.numero_empleado,'Promotor':p.nombre_completo,'Región':normalizedZone(p),'Ruta':p.ruta,'Capturas':c,'Meta':META_DIARIA,'Cumplimiento %':pct(c,META_DIARIA)})}}
     const regMap={};cumRows.forEach(r=>{const k=`${r['Fecha']}|${r['Región']}`;if(!regMap[k])regMap[k]={Fecha:r['Fecha'],Región:r['Región'],Capturas:0,Meta:0};regMap[k].Capturas+=r.Capturas;regMap[k].Meta+=r.Meta});const regRows=Object.values(regMap).map(r=>({...r,'Cumplimiento %':pct(r.Capturas,r.Meta)}));
