@@ -60,8 +60,35 @@ table{width:100%;border-collapse:collapse;font-size:12px;min-width:880px}th{text
 .export-card{background:#fff;border:1px solid var(--gray-200);border-radius:var(--radius);padding:18px;margin-bottom:14px}.export-card h3{font-size:14px;margin-bottom:5px}.export-card p{font-size:12px;color:var(--gray-600);line-height:1.55;margin-bottom:12px}
 .empty{text-align:center;padding:28px 12px;color:var(--gray-400);font-size:12px}.toast{position:fixed;right:22px;bottom:22px;background:var(--gray-900);color:#fff;padding:10px 15px;border-radius:10px;font-size:12px;z-index:200;transform:translateY(70px);opacity:0;transition:.25s}.toast.show{transform:translateY(0);opacity:1}
 
+
+/* ===== REPORTE EJECUTIVO / MODO CAPTURA ===== */
+.exec-report{background:#fff;border:1px solid var(--gray-200);border-radius:16px;padding:22px;box-shadow:0 8px 28px rgba(0,0,0,.035)}
+.exec-header{display:flex;justify-content:space-between;align-items:flex-start;gap:18px;padding-bottom:14px;border-bottom:1px solid var(--gray-100);margin-bottom:14px}
+.exec-brand{font-size:14px;font-weight:800;color:var(--brand-dark);letter-spacing:-.2px}.exec-brand span{color:var(--gray-400);font-weight:500}.exec-eyebrow{font-size:9px;text-transform:uppercase;letter-spacing:1px;color:var(--gray-400);font-weight:800;margin-bottom:4px}.exec-title{font-size:22px;font-weight:800;letter-spacing:-.6px}.exec-date{font-size:12px;color:var(--gray-600);margin-top:4px}.exec-status{text-align:right}.exec-status .cut{font-size:10px;color:var(--gray-400);text-transform:uppercase;letter-spacing:.5px}.exec-status .time{font-size:13px;font-weight:750;margin-top:3px}
+.exec-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:12px}.exec-kpi{border:1px solid var(--gray-200);border-radius:12px;padding:13px 14px;min-height:82px}.exec-kpi.primary{background:var(--brand-light);border-color:#bfe7d9}.exec-kpi-value{font-size:27px;font-weight:820;letter-spacing:-.8px;line-height:1}.exec-kpi-label{font-size:10px;color:var(--gray-600);font-weight:700;margin-top:7px}.exec-kpi-sub{font-size:9px;color:var(--gray-400);margin-top:3px}
+.exec-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}.exec-card{border:1px solid var(--gray-200);border-radius:12px;padding:13px 14px;min-height:190px}.exec-card-title{font-size:11px;font-weight:800;margin-bottom:11px;display:flex;justify-content:space-between;align-items:center}.exec-card-title span{font-size:9px;color:var(--gray-400);font-weight:550}.exec-region{display:grid;grid-template-columns:92px 1fr 78px;gap:9px;align-items:center;padding:9px 0;border-bottom:1px solid var(--gray-100)}.exec-region:last-child{border-bottom:0}.exec-region-name{font-size:10px;font-weight:800}.exec-region-track{height:8px;background:var(--gray-100);border-radius:8px;overflow:hidden}.exec-region-fill{height:100%;background:var(--brand);border-radius:8px}.exec-region-meta{font-size:9px;color:var(--gray-400);margin-top:4px}.exec-region-pct{text-align:right;font-size:12px;font-weight:800}
+.exec-trend-wrap{height:145px;position:relative}.exec-trend-wrap svg{width:100%;height:100%;display:block}.exec-axis{font-size:8px;fill:#888780}.exec-trend-line{fill:none;stroke:#1D9E75;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}.exec-trend-dot{fill:#fff;stroke:#1D9E75;stroke-width:2}.exec-grid-line{stroke:#EAE8E1;stroke-width:1}.exec-meta-line{stroke:#B4B2A9;stroke-width:1;stroke-dasharray:4 4}
+.exec-attention{display:grid;grid-template-columns:1.15fr .85fr;gap:12px}.exec-list{border:1px solid var(--gray-200);border-radius:12px;overflow:hidden}.exec-list-head{padding:10px 12px;background:var(--gray-50);font-size:10px;font-weight:800;display:grid;grid-template-columns:1fr 62px 72px;gap:8px}.exec-list-row{padding:9px 12px;border-top:1px solid var(--gray-100);display:grid;grid-template-columns:1fr 62px 72px;gap:8px;align-items:center;font-size:10px}.exec-list-row b{font-size:10px}.exec-list-row .route{font-size:9px;color:var(--gray-400);margin-top:2px}.exec-list-row .num{text-align:center;font-weight:800}.exec-list-row .pc{text-align:right;font-weight:800}
+.exec-metrics{border:1px solid var(--gray-200);border-radius:12px;padding:11px 13px}.exec-metric{display:flex;justify-content:space-between;gap:12px;padding:7px 0;border-bottom:1px solid var(--gray-100);font-size:10px}.exec-metric:last-child{border-bottom:0}.exec-metric span:first-child{color:var(--gray-600)}.exec-metric b{font-size:10px}.exec-alert{margin-top:12px;padding:10px 12px;background:var(--gray-50);border-left:3px solid var(--brand);border-radius:8px;font-size:10px;line-height:1.5;color:var(--gray-600)}.exec-alert strong{color:var(--gray-900)}
+.exec-footer{display:flex;justify-content:space-between;gap:16px;margin-top:12px;padding-top:9px;border-top:1px solid var(--gray-100);font-size:8px;color:var(--gray-400)}
+body.exec-capture{background:#fff}.exec-capture .sidebar,.exec-capture .topbar{display:none}.exec-capture .shell{margin-left:0}.exec-capture .main{max-width:1400px;padding:16px}.exec-capture .tab:not(#tab-ejecutivo){display:none!important}.exec-capture #tab-ejecutivo{display:block!important}.exec-capture .exec-toolbar{display:none}.exec-capture .exec-report{box-shadow:none;border-color:#eee}
+@page{size:A4 landscape;margin:7mm}
+@media print{
+  body.print-executive{background:#fff!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  body.print-executive #login-overlay,body.print-executive .sidebar,body.print-executive .topbar,body.print-executive .toast,body.print-executive .modal-bg{display:none!important}
+  body.print-executive .shell{margin:0!important;min-height:0!important}
+  body.print-executive .main{padding:0!important;margin:0!important;max-width:none!important}
+  body.print-executive .tab{display:none!important}
+  body.print-executive #tab-ejecutivo{display:block!important}
+  body.print-executive .exec-toolbar{display:none!important}
+  body.print-executive .exec-report{border:0!important;box-shadow:none!important;border-radius:0!important;padding:0!important;width:100%!important}
+  body.print-executive .exec-title{font-size:18px}.exec-kpi-value{font-size:23px}
+  body.print-executive .exec-card{min-height:170px}.exec-trend-wrap{height:125px}
+  body.print-executive .exec-kpis,body.print-executive .exec-grid,body.print-executive .exec-attention{break-inside:avoid}
+}
+
 @media(max-width:1050px){.stats{grid-template-columns:repeat(3,1fr)}.grid-2{grid-template-columns:1fr}}
-@media(max-width:760px){:root{--sidebar:0px}.sidebar{display:none}.shell{margin-left:0}.main{padding:14px}.topbar{padding:0 14px}.stats{grid-template-columns:1fr 1fr}.page-head{align-items:flex-start;flex-direction:column}.detail-grid,.form-grid,.inventory-grid{grid-template-columns:1fr}.form-grid .full{grid-column:auto}}
+@media(max-width:760px){:root{--sidebar:0px}.sidebar{display:none}.shell{margin-left:0}.main{padding:14px}.topbar{padding:0 14px}.stats{grid-template-columns:1fr 1fr}.page-head{align-items:flex-start;flex-direction:column}.detail-grid,.form-grid,.inventory-grid{grid-template-columns:1fr}.form-grid .full{grid-column:auto}.exec-kpis{grid-template-columns:1fr 1fr}.exec-grid,.exec-attention{grid-template-columns:1fr}.exec-report{padding:14px}.exec-header{flex-direction:column}.exec-status{text-align:left}}
 </style>
 </head>
 <body>
@@ -82,7 +109,8 @@ table{width:100%;border-collapse:collapse;font-size:12px;min-width:880px}th{text
   <aside class="sidebar">
     <div class="brand">Jumex <span>Fragua</span><small>Administración V2</small></div>
     <nav class="nav">
-      <button class="nav-btn active" data-tab="dashboard" onclick="switchTab('dashboard',this)">Resumen operativo</button>
+      <button class="nav-btn active" data-tab="ejecutivo" onclick="switchTab('ejecutivo',this)">Reporte ejecutivo</button>
+      <button class="nav-btn" data-tab="dashboard" onclick="switchTab('dashboard',this)">Resumen operativo</button>
       <button class="nav-btn" data-tab="visitas" onclick="switchTab('visitas',this)">Visitas y capturas</button>
       <button class="nav-btn" data-tab="promotores" onclick="switchTab('promotores',this)">Promotores</button>
       <button class="nav-btn" data-tab="tiendas" onclick="switchTab('tiendas',this)">Tiendas</button>
@@ -96,7 +124,7 @@ table{width:100%;border-collapse:collapse;font-size:12px;min-width:880px}th{text
 
   <div class="shell">
     <header class="topbar">
-      <div class="top-title" id="top-title">Resumen operativo</div>
+      <div class="top-title" id="top-title">Reporte ejecutivo</div>
       <div class="top-sub">Meta: 6 capturas por promotor / día</div>
       <div class="top-spacer"></div>
       <span class="refresh-info" id="refresh-info">—</span>
@@ -104,7 +132,66 @@ table{width:100%;border-collapse:collapse;font-size:12px;min-width:880px}th{text
     </header>
 
     <main class="main">
-      <section class="tab active" id="tab-dashboard">
+      <section class="tab active" id="tab-ejecutivo">
+        <div class="page-head exec-toolbar">
+          <div><h1>Reporte ejecutivo</h1><p>Vista compacta para captura de pantalla, correo o PDF.</p></div>
+          <div class="actions">
+            <input type="date" id="exec-fecha" onchange="loadExecutive()" style="padding:8px 10px;border:1px solid var(--gray-200);border-radius:8px;background:#fff">
+            <button class="btn btn-outline" onclick="toggleCaptureMode()">Modo captura</button>
+            <button class="btn btn-primary" onclick="printExecutive()">Imprimir / Guardar PDF</button>
+          </div>
+        </div>
+
+        <div class="exec-report" id="exec-report">
+          <div class="exec-header">
+            <div>
+              <div class="exec-brand">Jumex <span>Fragua</span></div>
+              <div class="exec-eyebrow">Operación nacional · Promotoría en campo</div>
+              <div class="exec-title">Reporte Ejecutivo de Promotoría</div>
+              <div class="exec-date" id="exec-date-label">—</div>
+            </div>
+            <div class="exec-status"><div class="cut">Corte del reporte</div><div class="time" id="exec-cut-time">—</div></div>
+          </div>
+
+          <div class="exec-kpis">
+            <div class="exec-kpi primary"><div class="exec-kpi-value green" id="ex-cump">0%</div><div class="exec-kpi-label">Cumplimiento nacional</div><div class="exec-kpi-sub" id="ex-cump-sub">0 de 0 capturas</div></div>
+            <div class="exec-kpi"><div class="exec-kpi-value" id="ex-capturas">0 / 0</div><div class="exec-kpi-label">Capturas / meta diaria</div><div class="exec-kpi-sub">Meta: 6 por promotor operativo</div></div>
+            <div class="exec-kpi"><div class="exec-kpi-value" id="ex-activos">0 / 0</div><div class="exec-kpi-label">Promotores con actividad</div><div class="exec-kpi-sub" id="ex-sin">0 sin capturas</div></div>
+            <div class="exec-kpi"><div class="exec-kpi-value" id="ex-calidad">—</div><div class="exec-kpi-label">Calidad de captura</div><div class="exec-kpi-sub" id="ex-calidad-sub">Sin alertas de captura</div></div>
+          </div>
+
+          <div class="exec-grid">
+            <div class="exec-card">
+              <div class="exec-card-title">Cumplimiento por región <span id="ex-region-sub">—</span></div>
+              <div id="ex-regions"></div>
+            </div>
+            <div class="exec-card">
+              <div class="exec-card-title">Tendencia de cumplimiento <span>Últimos 7 días calendario</span></div>
+              <div class="exec-trend-wrap" id="ex-trend"></div>
+            </div>
+          </div>
+
+          <div class="exec-attention">
+            <div class="exec-list">
+              <div class="exec-list-head"><span>Promotores que requieren atención</span><span style="text-align:center">Capturas</span><span style="text-align:right">Cumpl.</span></div>
+              <div id="ex-bottom-promoters"></div>
+            </div>
+            <div class="exec-metrics">
+              <div class="exec-card-title" style="margin-bottom:3px">Indicadores operativos <span>Visitas del día</span></div>
+              <div class="exec-metric"><span>Visitas en curso</span><b id="ex-abiertas">0</b></div>
+              <div class="exec-metric"><span>Duración promedio</span><b id="ex-duracion">—</b></div>
+              <div class="exec-metric"><span>Visitas ≥ 40 min</span><b id="ex-40">—</b></div>
+              <div class="exec-metric"><span>Capturas todo en cero</span><b id="ex-cero">0</b></div>
+              <div class="exec-metric"><span>Distancia GPS promedio</span><b id="ex-dist">—</b></div>
+            </div>
+          </div>
+
+          <div class="exec-alert" id="ex-observacion"><strong>Resumen:</strong> Sin información suficiente para generar observaciones.</div>
+          <div class="exec-footer"><span>Fuente: Plataforma Jumex Fragua · Supabase</span><span id="ex-footer-meta">Meta teórica: 6 capturas por promotor activo</span></div>
+        </div>
+      </section>
+
+      <section class="tab" id="tab-dashboard">
         <div class="page-head">
           <div><h1>Resumen operativo</h1><p>Cumplimiento de levantamientos terminados, no de simples entradas a tienda.</p></div>
           <div class="actions"><input type="date" id="dash-fecha" onchange="loadDashboard()" style="padding:8px 10px;border:1px solid var(--gray-200);border-radius:8px;background:#fff"></div>
@@ -234,7 +321,7 @@ const SUPABASE_ANON_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYm
 const META_DIARIA=6;
 const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
 
-let db={promotores:[],tiendas:[],dashVisitas:[],dashLevantamientos:[],visitas:[],levantamientos:[]};
+let db={promotores:[],tiendas:[],dashVisitas:[],dashLevantamientos:[],visitas:[],levantamientos:[],execVisitas:[],execLevantamientos:[],execTrend:[]};
 let refreshTimer=null;
 
 function escapeHtml(v){return String(v??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]))}
@@ -291,9 +378,10 @@ document.getElementById('login-pass').addEventListener('keydown',e=>{if(e.key===
 async function enterApp(session){
   document.getElementById('login-overlay').style.display='none';document.getElementById('app').style.display='block';
   document.getElementById('admin-email').textContent=session?.user?.email||'Administrador';
-  const hoy=todayLocal();['dash-fecha','vis-desde','vis-hasta','exp-desde','exp-hasta'].forEach(id=>document.getElementById(id).value=hoy);
+  const hoy=todayLocal();['exec-fecha','dash-fecha','vis-desde','vis-hasta','exp-desde','exp-hasta'].forEach(id=>document.getElementById(id).value=hoy);
   await loadCatalogos();
-  await loadDashboard();
+  await loadExecutive();
+  await loadDashboard(false);
   await loadVisitasPeriodo();
   refreshTimer=setInterval(()=>{if(document.getElementById('tab-dashboard').classList.contains('active'))loadDashboard(false)},60000);
 }
@@ -317,6 +405,72 @@ function fillSelectors(){
   document.getElementById('vis-ruta').innerHTML=options;document.getElementById('tienda-ruta').innerHTML=options;
   document.getElementById('vis-promotor').innerHTML='<option value="">Todos</option>'+db.promotores.filter(p=>p.activo).map(p=>`<option value="${escapeHtml(p.numero_empleado)}">${escapeHtml(p.nombre_completo)} · ${escapeHtml(p.numero_empleado)}</option>`).join('');
 }
+
+
+function localISODate(d){return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`}
+function datePretty(ymd){const d=new Date(`${ymd}T12:00:00`);return d.toLocaleDateString('es-MX',{weekday:'long',day:'numeric',month:'long',year:'numeric'})}
+function shortDay(ymd){const d=new Date(`${ymd}T12:00:00`);return d.toLocaleDateString('es-MX',{weekday:'short',day:'numeric'}).replace('.','')}
+
+async function loadExecutive(showMsg=true){
+  const fecha=document.getElementById('exec-fecha').value||todayLocal();
+  const endDay=new Date(`${fecha}T12:00:00`);const startDay=new Date(endDay);startDay.setDate(startDay.getDate()-6);
+  const trendDesde=localISODate(startDay);const {start,end}=dateBounds(trendDesde,fecha);const dayBounds=dateBounds(fecha,fecha);
+  try{
+    const [trendLev,dayVis]=await Promise.all([
+      fetchAll('levantamientos',q=>q.gte('marca_temporal',start).lt('marca_temporal',end).order('marca_temporal',{ascending:true})),
+      fetchAll('visitas',q=>q.gte('hora_inicio',dayBounds.start).lt('hora_inicio',dayBounds.end).order('hora_inicio',{ascending:false}))
+    ]);
+    db.execTrend=trendLev;db.execVisitas=dayVis;
+    db.execLevantamientos=trendLev.filter(l=>new Date(l.marca_temporal).toLocaleDateString('en-CA')===fecha);
+    renderExecutive(fecha,trendDesde);
+    document.getElementById('refresh-info').textContent='Actualizado '+new Date().toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'});
+    if(showMsg)showToast('Reporte ejecutivo actualizado.');
+  }catch(e){console.error(e);showToast('Error al cargar el reporte ejecutivo.',4500)}
+}
+
+function renderExecutive(fecha,trendDesde){
+  const ops=db.promotores.filter(isOperativePromotor),lev=db.execLevantamientos,vis=db.execVisitas;
+  const meta=ops.length*META_DIARIA,cump=pct(lev.length,meta);const byProm={};lev.forEach(l=>{byProm[l.codigo_promotor]=(byProm[l.codigo_promotor]||0)+1});
+  const conActividad=ops.filter(p=>(byProm[p.numero_empleado]||0)>0).length,sin=ops.length-conActividad;
+  const zeros=lev.filter(l=>l.confirmado_todo_cero===true).length;const calidad=lev.length?pct(lev.length-zeros,lev.length):null;
+  const abiertas=vis.filter(v=>!v.hora_fin||v.estado==='EN_VISITA').length;const completadas=vis.filter(v=>v.hora_fin);const durs=completadas.map(v=>Number(v.duracion_min)).filter(Number.isFinite);const avg=durs.length?durs.reduce((a,b)=>a+b,0)/durs.length:null;const c40=completadas.filter(v=>Number(v.duracion_min)>=40).length;const dists=vis.map(v=>Number(v.distancia_entrada_m)).filter(Number.isFinite);const avgDist=dists.length?dists.reduce((a,b)=>a+b,0)/dists.length:null;
+
+  document.getElementById('exec-date-label').textContent='Corte: '+datePretty(fecha);
+  document.getElementById('exec-cut-time').textContent=fecha===todayLocal()?new Date().toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'}):'Día cerrado';
+  const elC=document.getElementById('ex-cump');elC.textContent=cump.toFixed(1)+'%';elC.className='exec-kpi-value '+(cump>=90?'green':cump>=60?'amber':'red');
+  document.getElementById('ex-cump-sub').textContent=`${lev.length} de ${meta} capturas esperadas`;
+  document.getElementById('ex-capturas').textContent=`${lev.length} / ${meta}`;
+  document.getElementById('ex-activos').textContent=`${conActividad} / ${ops.length}`;document.getElementById('ex-sin').textContent=`${sin} sin capturas`;
+  document.getElementById('ex-calidad').textContent=calidad===null?'—':calidad.toFixed(1)+'%';document.getElementById('ex-calidad').className='exec-kpi-value '+(calidad===null?'':calidad>=95?'green':calidad>=85?'amber':'red');document.getElementById('ex-calidad-sub').textContent=zeros?`${zeros} captura${zeros===1?'':'s'} con alerta todo en cero`:'Sin alertas todo en cero';
+  document.getElementById('ex-abiertas').textContent=abiertas;document.getElementById('ex-duracion').textContent=avg===null?'—':avg.toFixed(1)+' min';document.getElementById('ex-40').textContent=completadas.length?`${c40} / ${completadas.length} (${pct(c40,completadas.length).toFixed(1)}%)`:'—';document.getElementById('ex-cero').textContent=zeros;document.getElementById('ex-dist').textContent=avgDist===null?'—':Math.round(avgDist)+' m';
+
+  const regions={};ops.forEach(p=>{const z=normalizedZone(p);if(!regions[z])regions[z]={prom:0,capt:0};regions[z].prom++});lev.forEach(l=>{const p=db.promotores.find(x=>x.numero_empleado===l.codigo_promotor);const z=p?normalizedZone(p):(l.region||'SIN REGIÓN').toUpperCase();if(!regions[z])regions[z]={prom:0,capt:0};regions[z].capt++});
+  const regEntries=Object.entries(regions).sort((a,b)=>b[1].prom-a[1].prom);document.getElementById('ex-region-sub').textContent=`${ops.length} promotores operativos`;
+  document.getElementById('ex-regions').innerHTML=regEntries.length?regEntries.map(([z,r])=>{const m=r.prom*META_DIARIA,pc=pct(r.capt,m);return `<div class="exec-region"><div class="exec-region-name">${escapeHtml(z)}</div><div><div class="exec-region-track"><div class="exec-region-fill" style="width:${Math.min(100,pc)}%"></div></div><div class="exec-region-meta">${r.capt} / ${m} · ${r.prom} promotores</div></div><div class="exec-region-pct ${pc<60?'red':pc>=90?'green':''}">${pc.toFixed(1)}%</div></div>`}).join(''):'<div class="empty">Sin promotores operativos.</div>';
+
+  const ranked=ops.map(p=>{const c=byProm[p.numero_empleado]||0;return {p,c,pc:pct(c,META_DIARIA)}}).sort((a,b)=>a.pc-b.pc||a.p.nombre_completo.localeCompare(b.p.nombre_completo));
+  const attention=ranked.filter(x=>x.c<META_DIARIA).slice(0,5);document.getElementById('ex-bottom-promoters').innerHTML=attention.length?attention.map(x=>`<div class="exec-list-row"><div><b>${escapeHtml(x.p.nombre_completo)}</b><div class="route">${escapeHtml(normalizedZone(x.p))} · ${escapeHtml(x.p.ruta||'Sin ruta')}</div></div><div class="num">${x.c}/${META_DIARIA}</div><div class="pc ${x.pc<50?'red':x.pc>=100?'green':''}">${x.pc.toFixed(1)}%</div></div>`).join(''):'<div class="empty" style="padding:18px">Todos los promotores cumplieron su meta.</div>';
+
+  renderExecutiveTrend(fecha,trendDesde,ops.length);
+  const worstRegion=regEntries.map(([z,r])=>({z,pc:pct(r.capt,r.prom*META_DIARIA),capt:r.capt,meta:r.prom*META_DIARIA})).sort((a,b)=>a.pc-b.pc)[0];
+  const notes=[];if(meta)notes.push(`cumplimiento nacional de <strong>${cump.toFixed(1)}%</strong> (${lev.length}/${meta})`);if(worstRegion&&regEntries.length>1)notes.push(`<strong>${escapeHtml(worstRegion.z)}</strong> presenta el menor avance con ${worstRegion.pc.toFixed(1)}%`);if(sin)notes.push(`<strong>${sin}</strong> promotor${sin===1?'':'es'} sin capturas`);if(abiertas)notes.push(`<strong>${abiertas}</strong> visita${abiertas===1?'':'s'} en curso`);if(zeros)notes.push(`<strong>${zeros}</strong> captura${zeros===1?'':'s'} marcada${zeros===1?'':'s'} como todo en cero`);
+  document.getElementById('ex-observacion').innerHTML='<strong>Resumen:</strong> '+(notes.length?notes.join(' · ')+'.':'Sin incidencias relevantes para el corte seleccionado.');
+  document.getElementById('ex-footer-meta').textContent=`Meta teórica: ${ops.length} promotores × ${META_DIARIA} = ${meta} capturas`;
+}
+
+function renderExecutiveTrend(fecha,trendDesde,promCount){
+  const end=new Date(`${fecha}T12:00:00`),days=[];for(let i=6;i>=0;i--){const d=new Date(end);d.setDate(d.getDate()-i);days.push(localISODate(d))}
+  const counts={};db.execTrend.forEach(l=>{const k=new Date(l.marca_temporal).toLocaleDateString('en-CA');counts[k]=(counts[k]||0)+1});const meta=promCount*META_DIARIA;const vals=days.map(d=>pct(counts[d]||0,meta));
+  const W=520,H=145,L=30,R=12,T=12,B=27,plotW=W-L-R,plotH=H-T-B;const maxY=Math.max(100,Math.ceil(Math.max(...vals,100)/25)*25);const x=i=>L+(plotW*(i/(days.length-1)));const y=v=>T+plotH-(Math.min(v,maxY)/maxY)*plotH;
+  const points=vals.map((v,i)=>`${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(' ');let grid='';for(const v of [0,50,100]){const yy=y(v);grid+=`<line class="exec-grid-line" x1="${L}" y1="${yy}" x2="${W-R}" y2="${yy}"/><text class="exec-axis" x="1" y="${yy+3}">${v}%</text>`}const metaY=y(100);grid+=`<line class="exec-meta-line" x1="${L}" y1="${metaY}" x2="${W-R}" y2="${metaY}"/>`;
+  const dots=vals.map((v,i)=>`<circle class="exec-trend-dot" cx="${x(i)}" cy="${y(v)}" r="3.3"/><text class="exec-axis" text-anchor="middle" x="${x(i)}" y="${Math.max(9,y(v)-7)}">${v.toFixed(0)}%</text><text class="exec-axis" text-anchor="middle" x="${x(i)}" y="${H-7}">${escapeHtml(shortDay(days[i]))}</text>`).join('');
+  document.getElementById('ex-trend').innerHTML=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Tendencia de cumplimiento de los últimos siete días">${grid}<polyline class="exec-trend-line" points="${points}"/>${dots}</svg>`;
+}
+
+function toggleCaptureMode(){document.body.classList.toggle('exec-capture');if(document.body.classList.contains('exec-capture'))showToast('Modo captura activo. Presiona Esc para salir.',3500)}
+function printExecutive(){document.body.classList.add('print-executive');setTimeout(()=>window.print(),80)}
+window.addEventListener('afterprint',()=>document.body.classList.remove('print-executive'));
+window.addEventListener('keydown',e=>{if(e.key==='Escape'&&document.body.classList.contains('exec-capture'))document.body.classList.remove('exec-capture')});
 
 async function loadDashboard(showMsg=true){
   const fecha=document.getElementById('dash-fecha').value||todayLocal();const {start,end}=dateBounds(fecha,fecha);
@@ -454,8 +608,8 @@ async function exportarDatos(){
   }catch(e){console.error(e);showToast('No se pudo generar el reporte: '+(e.message||'error'),5500)}finally{btn.disabled=false;btn.textContent='Exportar Excel'}
 }
 
-function switchTab(id,btn){document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));document.querySelectorAll('.nav-btn').forEach(x=>x.classList.remove('active'));document.getElementById('tab-'+id).classList.add('active');if(btn)btn.classList.add('active');const titles={dashboard:'Resumen operativo',visitas:'Visitas y capturas',promotores:'Promotores',tiendas:'Tiendas',exportar:'Exportar'};document.getElementById('top-title').textContent=titles[id]||'Jumex Fragua'}
-async function refreshCurrent(){const active=document.querySelector('.tab.active')?.id;if(active==='tab-dashboard')await loadDashboard();else if(active==='tab-visitas')await loadVisitasPeriodo();else if(active==='tab-promotores'||active==='tab-tiendas')await loadCatalogos();else showToast('No hay datos que actualizar en esta sección.')}
+function switchTab(id,btn){document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));document.querySelectorAll('.nav-btn').forEach(x=>x.classList.remove('active'));document.getElementById('tab-'+id).classList.add('active');if(btn)btn.classList.add('active');const titles={ejecutivo:'Reporte ejecutivo',dashboard:'Resumen operativo',visitas:'Visitas y capturas',promotores:'Promotores',tiendas:'Tiendas',exportar:'Exportar'};document.getElementById('top-title').textContent=titles[id]||'Jumex Fragua';if(id==='ejecutivo')loadExecutive(false)}
+async function refreshCurrent(){const active=document.querySelector('.tab.active')?.id;if(active==='tab-ejecutivo')await loadExecutive();else if(active==='tab-dashboard')await loadDashboard();else if(active==='tab-visitas')await loadVisitasPeriodo();else if(active==='tab-promotores'||active==='tab-tiendas')await loadCatalogos();else showToast('No hay datos que actualizar en esta sección.')}
 
 window.addEventListener('load',async()=>{
   try{const {data:{session}}=await sb.auth.getSession();if(session&&await requireAdmin())await enterApp(session);else if(session)await sb.auth.signOut()}catch(e){console.error(e)}
