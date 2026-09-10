@@ -651,14 +651,61 @@ async function doLogin(){
   const email=document.getElementById('login-user').value.trim();
   const password=document.getElementById('login-pass').value;
   const btn=document.getElementById('btn-login');const err=document.getElementById('login-err');
-  err.style.display='none';btn.disabled=true;btn.textContent='Verificando...';
+
+  err.style.display='none';
+  btn.disabled=true;
+  btn.textContent='Verificando...';
+
   try{
+    if(!email||!password)throw new Error('Escribe correo y contraseña.');
+
     const {data,error}=await sb.auth.signInWithPassword({email,password});
-    if(error||!data.session)throw new Error('Credenciales incorrectas.');
-    if(!(await requireAdmin())){await sb.auth.signOut();throw new Error('Tu usuario está autenticado, pero no está autorizado como administrador.');}
+
+    if(error){
+      console.error('Supabase Auth:', error);
+
+      const msg=String(error.message||'').toLowerCase();
+
+      if(msg.includes('invalid login credentials')){
+        throw new Error('Correo o contraseña incorrectos.');
+      }
+      if(msg.includes('email not confirmed')){
+        throw new Error('El correo del administrador todavía no está confirmado en Supabase.');
+      }
+      if(msg.includes('failed to fetch')||msg.includes('network')||msg.includes('timeout')){
+        throw new Error('No fue posible comunicarse con Supabase. Revisa la conexión e intenta nuevamente.');
+      }
+
+      throw new Error('Supabase Auth respondió: '+(error.message||'error desconocido'));
+    }
+
+    if(!data?.session){
+      throw new Error('Supabase no devolvió una sesión válida.');
+    }
+
+    let autorizado=false;
+    try{
+      autorizado=await requireAdmin();
+    }catch(adminError){
+      console.error('Validación admin:',adminError);
+      await sb.auth.signOut();
+      throw new Error('El acceso fue autenticado, pero no se pudo validar el permiso de administrador: '+(adminError.message||'error'));
+    }
+
+    if(!autorizado){
+      await sb.auth.signOut();
+      throw new Error('El correo y contraseña son correctos, pero este usuario no está autorizado como administrador.');
+    }
+
     await enterApp(data.session);
-  }catch(e){err.textContent=e.message||'No se pudo iniciar sesión.';err.style.display='block'}
-  finally{btn.disabled=false;btn.textContent='Entrar'}
+  }catch(e){
+    console.error(e);
+    err.textContent=e.message||'No se pudo iniciar sesión.';
+    err.style.display='block';
+  }finally{
+    btn.disabled=false;
+    btn.textContent='Entrar';
+  }
 }
 
 document.getElementById('login-pass').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin()});
