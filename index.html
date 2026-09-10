@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Promotor — Jumex Fragua V2 Segura</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{
+  --brand:#1D9E75;--brand-dark:#0F6E56;--brand-light:#E1F5EE;
+  --danger:#E24B4A;--danger-light:#FCEBEB;--amber:#EF9F27;--amber-light:#FAEEDA;
+  --gray-50:#F6F5F1;--gray-100:#F1EFE8;--gray-200:#DFDDD5;--gray-400:#888780;
+  --gray-600:#5F5E5A;--gray-900:#2C2C2A;--white:#fff;--radius:14px;--radius-sm:9px;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:var(--gray-50);color:var(--gray-900);min-height:100vh;max-width:520px;margin:0 auto}
+.screen{display:none;min-height:100vh;flex-direction:column}.screen.active{display:flex}
+.header{background:var(--white);padding:14px 16px;border-bottom:1px solid var(--gray-200);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:20}
+.header-logo{font-size:15px;font-weight:700;color:var(--brand-dark)}.header-logo span{color:var(--gray-400);font-weight:400}
+.link-btn{border:0;background:none;color:var(--gray-600);font-size:12px;cursor:pointer}
+.login-wrap{flex:1;display:flex;flex-direction:column;justify-content:center;padding:30px 22px;gap:24px}
+.login-brand{text-align:center}.logo-icon{width:70px;height:70px;border-radius:20px;background:var(--brand-light);display:flex;align-items:center;justify-content:center;margin:0 auto 14px;font-size:32px}.login-brand h1{font-size:22px}.login-brand p{font-size:14px;color:var(--gray-600);margin-top:4px}
+.input-group{display:flex;flex-direction:column;gap:6px;margin-bottom:12px}.input-group label{font-size:13px;font-weight:600;color:var(--gray-600)}
+input,select,textarea{width:100%;padding:13px 14px;border:1px solid var(--gray-200);border-radius:var(--radius-sm);font-size:16px;background:var(--white);color:var(--gray-900);outline:none}input:focus,select:focus,textarea:focus{border-color:var(--brand)}
+input[type=number]{font-variant-numeric:tabular-nums}textarea{min-height:84px;resize:vertical}
+.btn{border:0;border-radius:var(--radius-sm);padding:14px 16px;font-size:15px;font-weight:700;cursor:pointer}.btn:disabled{opacity:.45;cursor:not-allowed}.btn-primary{background:var(--brand);color:#fff}.btn-outline{background:#fff;color:var(--gray-900);border:1px solid var(--gray-200)}.btn-danger{background:var(--danger);color:#fff}.btn-full{width:100%}
+.spinner{display:inline-block;width:15px;height:15px;border:2px solid rgba(255,255,255,.45);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;vertical-align:-2px;margin-right:6px}@keyframes spin{to{transform:rotate(360deg)}}
+.main{padding:14px;display:flex;flex-direction:column;gap:12px}
+.card{background:#fff;border:1px solid #e9e7df;border-radius:var(--radius);padding:16px}.card-title{font-size:13px;font-weight:700;margin-bottom:10px}.muted{color:var(--gray-600)}.small{font-size:12px}.tiny{font-size:11px}
+.user-row{display:flex;gap:12px;align-items:center}.avatar{width:46px;height:46px;border-radius:50%;background:var(--brand-light);color:var(--brand-dark);display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700}.user-name{font-weight:700;font-size:15px}.user-meta{font-size:12px;color:var(--gray-600);margin-top:3px}
+.visit-hero{background:linear-gradient(145deg,var(--brand),var(--brand-dark));color:white;border:0}.visit-hero h2{font-size:18px;margin-bottom:5px}.visit-hero p{font-size:13px;opacity:.86;line-height:1.4}.visit-hero .btn{margin-top:14px;background:rgba(255,255,255,.20);color:#fff;width:100%}
+.visit-active{border-color:#b8e4d5}.status-pill{display:inline-flex;align-items:center;gap:6px;background:var(--brand-light);color:var(--brand-dark);font-size:11px;font-weight:700;border-radius:30px;padding:5px 9px;margin-bottom:9px}.dot{width:7px;height:7px;border-radius:50%;background:var(--brand)}
+.visit-name{font-size:17px;font-weight:750}.visit-meta{font-size:12px;color:var(--gray-600);margin-top:4px;line-height:1.55}
+.form-header{padding-top:4px}.form-header h2{font-size:19px}.form-header p{font-size:13px;color:var(--gray-600);margin-top:4px;line-height:1.4}
+.section{background:#fff;border:1px solid #e9e7df;border-radius:var(--radius);padding:16px;margin-bottom:12px}.section h3{font-size:16px;margin-bottom:3px}.section-sub{font-size:12px;color:var(--gray-600);margin-bottom:14px}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:10px}.field{margin-bottom:13px}.field:last-child{margin-bottom:0}.field label{display:block;font-size:13px;font-weight:600;margin-bottom:6px;line-height:1.35}.field .hint{font-size:11px;color:var(--gray-400);margin-top:5px}
+.segment{display:grid;grid-template-columns:1fr 1fr;gap:8px}.segment input{display:none}.segment label{padding:11px;border:1px solid var(--gray-200);border-radius:9px;text-align:center;font-size:13px;font-weight:650;cursor:pointer;background:#fff}.segment input:checked+label{border-color:var(--brand);background:var(--brand-light);color:var(--brand-dark)}
+.conditional{display:none;margin-top:10px;padding:11px;background:var(--gray-50);border-radius:10px}.conditional.show{display:block}
+.alert{padding:12px 13px;border-radius:10px;font-size:12px;line-height:1.45;margin-bottom:12px}.alert-danger{background:var(--danger-light);color:#791F1F}.alert-warn{background:var(--amber-light);color:#633806}.alert-info{background:var(--brand-light);color:var(--brand-dark)}
+.error-field{border-color:var(--danger)!important;background:#fffafa!important}.error-text{color:var(--danger);font-size:11px;margin-top:5px}
+.zero-box{display:none;border:1px solid #edc678;background:#fffaf0}.zero-box.show{display:block}
+.submit-sticky{position:sticky;bottom:0;background:linear-gradient(transparent,var(--gray-50) 16%);padding:18px 0 14px;z-index:10}.submit-sticky .btn{box-shadow:0 6px 22px rgba(15,110,86,.2)}
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.38);z-index:50;display:none;align-items:flex-end;justify-content:center}.modal-bg.show{display:flex}.sheet{background:#fff;width:100%;max-width:520px;max-height:88vh;border-radius:20px 20px 0 0;padding:18px;overflow:auto}.sheet-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}.sheet-head h2{font-size:18px}.close{border:0;background:var(--gray-100);width:32px;height:32px;border-radius:50%;font-size:18px;cursor:pointer}.store-search{margin-bottom:10px}.store-list{display:flex;flex-direction:column;gap:8px}.store-item{border:1px solid var(--gray-200);border-radius:11px;padding:12px;cursor:pointer;background:#fff}.store-item:active{background:var(--gray-50)}.store-name{font-size:14px;font-weight:700}.store-meta{font-size:11px;color:var(--gray-600);margin-top:3px}.empty{text-align:center;padding:24px 8px;color:var(--gray-400);font-size:13px}
+.gps-box{display:none;margin-top:12px}.gps-box.show{display:block}.gps-result{font-size:12px;line-height:1.55;margin-top:10px}
+.toast{position:fixed;bottom:22px;left:50%;transform:translate(-50%,90px);background:#242421;color:#fff;padding:11px 16px;border-radius:20px;font-size:12px;z-index:100;max-width:90%;text-align:center;transition:.25s}.toast.show{transform:translate(-50%,0)}
+.hidden{display:none!important}
+@media(max-width:370px){.grid-2{grid-template-columns:1fr}.main{padding:10px}}
+</style>
+</head>
+<body>
+
+<div class="screen active" id="screen-login">
+  <div class="login-wrap">
+    <div class="login-brand">
+      <div class="logo-icon">✦</div>
+      <h1>Jumex Fragua</h1>
+      <p>Promotoría en campo</p>
+    </div>
+    <div>
+      <div class="input-group"><label>Número de empleado</label><input type="text" id="input-codigo" inputmode="numeric" autocomplete="off" placeholder="Ej: 1023"></div>
+      <div class="input-group"><label>PIN</label><input type="password" id="input-pin" inputmode="numeric" maxlength="6" autocomplete="off" placeholder="••••"></div>
+      <div id="alert-login" class="alert alert-danger hidden">Número de empleado o PIN incorrecto.</div>
+      <button class="btn btn-primary btn-full" id="btn-login" onclick="handleLogin()">Entrar</button>
+    </div>
+  </div>
+</div>
+
+<div class="screen" id="screen-main">
+  <div class="header">
+    <div class="header-logo">Jumex <span>Fragua</span></div>
+    <button class="link-btn" onclick="logout()">Cerrar sesión</button>
+  </div>
+
+  <div class="main">
+    <div class="card">
+      <div class="user-row">
+        <div class="avatar" id="avatar">--</div>
+        <div><div class="user-name" id="user-name">—</div><div class="user-meta" id="user-meta">—</div></div>
+      </div>
+    </div>
+
+    <div class="card visit-hero" id="card-new-visit">
+      <h2>Registrar visita</h2>
+      <p>Selecciona una tienda de tu ruta. Al registrar la entrada se solicitará tu ubicación una sola vez.</p>
+      <button class="btn" onclick="openStoreSheet()">+ Registrar visita</button>
+    </div>
+
+    <div class="card visit-active hidden" id="card-active-visit">
+      <div class="status-pill"><span class="dot"></span> VISITA EN CURSO</div>
+      <div class="visit-name" id="visit-store-name">—</div>
+      <div class="visit-meta" id="visit-meta">—</div>
+    </div>
+
+    <div id="inventory-form-wrap" class="hidden">
+      <div class="form-header">
+        <h2>Levantamiento de inventario</h2>
+        <p>Completa la información de la tienda. Enviar las respuestas también registrará tu salida.</p>
+      </div>
+
+      <div id="form-errors" class="alert alert-danger hidden" style="margin-top:12px"></div>
+
+      <form id="inventory-form" novalidate>
+        <div class="section">
+          <h3>HYDROLIT</h3><div class="section-sub">Inventario y presencia en punto de venta</div>
+          <div class="grid-2">
+            <div class="field"><label>Inventario total Manzana</label><input class="inv-input" type="number" min="0" step="1" name="inventario_hydrolit_manzana" inputmode="numeric" placeholder="0"></div>
+            <div class="field"><label>Inventario total Uva</label><input class="inv-input" type="number" min="0" step="1" name="inventario_hydrolit_uva" inputmode="numeric" placeholder="0"></div>
+            <div class="field"><label>Inventario total Coco</label><input class="inv-input" type="number" min="0" step="1" name="inventario_hydrolit_coco" inputmode="numeric" placeholder="0"></div>
+            <div class="field"><label>Inventario total Naranja - Mandarina</label><input class="inv-input" type="number" min="0" step="1" name="inventario_hydrolit_naranja_mandarina" inputmode="numeric" placeholder="0"></div>
+            <div class="field"><label>Inventario total Fresa</label><input class="inv-input" type="number" min="0" step="1" name="inventario_hydrolit_fresa" inputmode="numeric" placeholder="0"></div>
+          </div>
+
+          <div class="field"><label>¿Hydrolit está en anaquel?</label><div class="segment"><input type="radio" name="hydrolit_anaquel" id="hyd-ana-si" value="true" onchange="toggleConditional('hyd-anaquel-frentes',true);recalcZero()"><label for="hyd-ana-si">Sí</label><input type="radio" name="hydrolit_anaquel" id="hyd-ana-no" value="false" onchange="toggleConditional('hyd-anaquel-frentes',false,'hydrolit_frentes_anaquel');recalcZero()"><label for="hyd-ana-no">No</label></div><div class="conditional" id="hyd-anaquel-frentes"><label>¿Cuántos frentes de Hydrolit hay en anaquel?</label><input type="number" min="1" step="1" name="hydrolit_frentes_anaquel" inputmode="numeric" placeholder="Ej: 4"></div></div>
+
+          <div class="field"><label>¿Tienes cabecera de Hydrolit?</label><div class="segment"><input type="radio" name="hydrolit_cabecera" id="hyd-cab-si" value="true" onchange="recalcZero()"><label for="hyd-cab-si">Sí</label><input type="radio" name="hydrolit_cabecera" id="hyd-cab-no" value="false" onchange="recalcZero()"><label for="hyd-cab-no">No</label></div></div>
+
+          <div class="field"><label>¿Hydrolit está en refrigerador?</label><div class="segment"><input type="radio" name="hydrolit_refrigerador" id="hyd-ref-si" value="true" onchange="toggleConditional('hyd-ref-frentes',true);recalcZero()"><label for="hyd-ref-si">Sí</label><input type="radio" name="hydrolit_refrigerador" id="hyd-ref-no" value="false" onchange="toggleConditional('hyd-ref-frentes',false,'hydrolit_frentes_refrigerador');recalcZero()"><label for="hyd-ref-no">No</label></div><div class="conditional" id="hyd-ref-frentes"><label>¿Cuántos frentes de Hydrolit hay en refrigerador?</label><input type="number" min="1" step="1" name="hydrolit_frentes_refrigerador" inputmode="numeric" placeholder="Ej: 2"></div></div>
+
+          <div class="field"><label>¿Tienes exhibición adicional de Hydrolit?</label><div class="segment"><input type="radio" name="hydrolit_exhibicion_adicional" id="hyd-ex-si" value="true" onchange="toggleConditional('hyd-ex-cant',true);recalcZero()"><label for="hyd-ex-si">Sí</label><input type="radio" name="hydrolit_exhibicion_adicional" id="hyd-ex-no" value="false" onchange="toggleConditional('hyd-ex-cant',false,'hydrolit_cantidad_exhibiciones');recalcZero()"><label for="hyd-ex-no">No</label></div><div class="conditional" id="hyd-ex-cant"><label>¿Cuántas exhibiciones adicionales?</label><input type="number" min="1" step="1" name="hydrolit_cantidad_exhibiciones" inputmode="numeric" placeholder="Ej: 1"><div class="hint">Mostrador, cajas, areteros, etc.</div></div></div>
+        </div>
+
+        <div class="section">
+          <h3>XOT</h3><div class="section-sub">Inventario, refrigerador y exhibición</div>
+          <div class="field"><label>Inventario XOT</label><input class="inv-input" type="number" min="0" step="1" name="inventario_xot" inputmode="numeric" placeholder="0"></div>
+          <div class="field"><label>¿Cuántos frentes de XOT hay en refrigerador?</label><input type="number" min="0" step="1" name="xot_frentes_refrigerador" inputmode="numeric" placeholder="0"><div class="hint">Si reportas frentes, el inventario XOT no puede ser 0.</div></div>
+          <div class="field"><label>¿La puerta de XOT cuenta con candado?</label><div class="segment"><input type="radio" name="xot_candado" id="xot-can-si" value="true"><label for="xot-can-si">Sí</label><input type="radio" name="xot_candado" id="xot-can-no" value="false"><label for="xot-can-no">No</label></div></div>
+          <div class="field"><label>¿Hay exhibición adicional de XOT?</label><div class="segment"><input type="radio" name="xot_exhibicion_adicional" id="xot-ex-si" value="true" onchange="toggleConditional('xot-ex-cant',true);recalcZero()"><label for="xot-ex-si">Sí</label><input type="radio" name="xot_exhibicion_adicional" id="xot-ex-no" value="false" onchange="toggleConditional('xot-ex-cant',false,'xot_cantidad_exhibiciones');recalcZero()"><label for="xot-ex-no">No</label></div><div class="conditional" id="xot-ex-cant"><label>¿Cuántas exhibiciones adicionales?</label><input type="number" min="1" step="1" name="xot_cantidad_exhibiciones" inputmode="numeric" placeholder="Ej: 1"></div></div>
+        </div>
+
+        <div class="section">
+          <h3>BLIST</h3><div class="section-sub">Inventario y presencia en punto de venta</div>
+          <div class="grid-2">
+            <div class="field"><label>Inventario total Uva</label><input class="inv-input" type="number" min="0" step="1" name="inventario_blist_uva" inputmode="numeric" placeholder="0"></div>
+            <div class="field"><label>Inventario total Limonada Rosa</label><input class="inv-input" type="number" min="0" step="1" name="inventario_blist_limonada_rosa" inputmode="numeric" placeholder="0"></div>
+          </div>
+          <div class="field"><label>¿Blist está en anaquel?</label><div class="segment"><input type="radio" name="blist_anaquel" id="bli-ana-si" value="true" onchange="toggleConditional('bli-ana-frentes',true);recalcZero()"><label for="bli-ana-si">Sí</label><input type="radio" name="blist_anaquel" id="bli-ana-no" value="false" onchange="toggleConditional('bli-ana-frentes',false,'blist_frentes_anaquel');recalcZero()"><label for="bli-ana-no">No</label></div><div class="conditional" id="bli-ana-frentes"><label>¿Cuántos frentes de Blist hay en anaquel?</label><input type="number" min="1" step="1" name="blist_frentes_anaquel" inputmode="numeric" placeholder="Ej: 3"></div></div>
+          <div class="field"><label>¿Blist está en refrigerador?</label><div class="segment"><input type="radio" name="blist_refrigerador" id="bli-ref-si" value="true" onchange="toggleConditional('bli-ref-frentes',true);recalcZero()"><label for="bli-ref-si">Sí</label><input type="radio" name="blist_refrigerador" id="bli-ref-no" value="false" onchange="toggleConditional('bli-ref-frentes',false,'blist_frentes_refrigerador');recalcZero()"><label for="bli-ref-no">No</label></div><div class="conditional" id="bli-ref-frentes"><label>¿Cuántos frentes de Blist hay en refrigerador?</label><input type="number" min="1" step="1" name="blist_frentes_refrigerador" inputmode="numeric" placeholder="Ej: 2"></div></div>
+          <div class="field"><label>¿Hay exhibición adicional de Blist?</label><div class="segment"><input type="radio" name="blist_exhibicion_adicional" id="bli-ex-si" value="true" onchange="toggleConditional('bli-ex-cant',true);recalcZero()"><label for="bli-ex-si">Sí</label><input type="radio" name="blist_exhibicion_adicional" id="bli-ex-no" value="false" onchange="toggleConditional('bli-ex-cant',false,'blist_cantidad_exhibiciones');recalcZero()"><label for="bli-ex-no">No</label></div><div class="conditional" id="bli-ex-cant"><label>¿Cuántas exhibiciones adicionales?</label><input type="number" min="1" step="1" name="blist_cantidad_exhibiciones" inputmode="numeric" placeholder="Ej: 1"></div></div>
+        </div>
+
+        <div class="section zero-box" id="zero-box">
+          <h3>Confirmación de inventario en cero</h3>
+          <div class="section-sub">Todos los inventarios fueron capturados en 0. Para continuar debes indicar el motivo y confirmar que revisaste la tienda.</div>
+          <div class="field"><label>Motivo</label><select name="motivo_todo_cero"><option value="">Selecciona...</option><option>Agotado / sin existencia</option><option>La tienda no maneja los productos evaluados</option><option>No se permitió revisar inventario</option><option>Otro</option></select></div>
+          <label style="display:flex;gap:9px;align-items:flex-start;font-size:12px;line-height:1.45"><input type="checkbox" name="confirmado_todo_cero" style="width:auto;margin-top:2px"> Confirmo que revisé los productos y que el inventario total reportado es realmente 0.</label>
+        </div>
+
+        <div class="submit-sticky"><button type="button" class="btn btn-primary btn-full" id="btn-submit" onclick="submitLevantamiento()">Enviar respuestas y registrar salida</button></div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<div class="modal-bg" id="store-modal">
+  <div class="sheet">
+    <div class="sheet-head"><div><h2>Selecciona la tienda</h2><div class="small muted" id="sheet-route">—</div></div><button class="close" onclick="closeStoreSheet()">×</button></div>
+    <input class="store-search" id="store-search" placeholder="Buscar por nombre o ID" oninput="renderStores(this.value)">
+    <div class="store-list" id="store-list"></div>
+    <div class="gps-box alert alert-info" id="gps-box"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const SUPABASE_URL='https://cdswrgjxrltobsdwytzl.supabase.co';
+const SUPABASE_PUBLIC_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNkc3dyZ2p4cmx0b2JzZHd5dHpsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExMjA2OTUsImV4cCI6MjA5NjY5NjY5NX0.EN1xP-Ku1x3LLNyNZjfzjq5N6yFmBnUFKwsd8_oPzrE';
+const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_PUBLIC_KEY);
+
+// El promotor nunca escribe este correo. Se construye internamente con su número de empleado.
+const PROMOTOR_AUTH_DOMAIN='promotores.fragua.app';
+
+// Ajustables sin tocar el resto del flujo
+const RADIO_ENTRADA_METROS=150;
+const MAX_PRECISION_GPS_METROS=120;
+const VISITA_TIEMPO_ESPERADO_MIN=40;
+const APP_VERSION='2.1-secure';
+
+let state={promotor:null,tiendasRuta:[],visitaActual:null};
+
+function showScreen(id){document.querySelectorAll('.screen').forEach(x=>x.classList.remove('active'));document.getElementById(id).classList.add('active')}
+function showToast(msg,dur=3000){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),dur)}
+function initials(n){return (n||'').trim().split(/\s+/).slice(0,2).map(x=>x[0]||'').join('').toUpperCase()}
+function fmtTime(iso){return iso?new Date(iso).toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'}):'—'}
+function boolRadio(name){const el=document.querySelector(`input[name="${name}"]:checked`);return el?el.value==='true':null}
+function num(name){const el=document.querySelector(`[name="${name}"]`);if(!el||el.value==='')return null;return Number(el.value)}
+function setZero(name){const el=document.querySelector(`[name="${name}"]`);if(el)el.value=0}
+
+function authEmailForEmployee(codigo){
+  return `${String(codigo).trim().toLowerCase()}@${PROMOTOR_AUTH_DOMAIN}`;
+}
+
+async function cargarPerfilAutenticado(){
+  const {data,error}=await sb.rpc('mi_perfil');
+  if(error)throw error;
+  if(!data||!data.numero_empleado)throw new Error('Tu usuario no está vinculado a un promotor activo.');
+  state.promotor=data;
+}
+
+async function handleLogin(){
+  const codigo=document.getElementById('input-codigo').value.trim();
+  const pin=document.getElementById('input-pin').value.trim();
+  const alert=document.getElementById('alert-login');
+  if(!codigo||!pin){alert.textContent='Ingresa tu número de empleado y tu PIN.';alert.classList.remove('hidden');return}
+  if(!/^\d+$/.test(codigo)){alert.textContent='El número de empleado debe contener solo números.';alert.classList.remove('hidden');return}
+
+  const btn=document.getElementById('btn-login');
+  btn.disabled=true;
+  btn.innerHTML='<span class="spinner"></span>Verificando...';
+  alert.classList.add('hidden');
+  try{
+    const email=authEmailForEmployee(codigo);
+    const {data,error}=await sb.auth.signInWithPassword({email,password:pin});
+    if(error||!data.session)throw new Error('Número de empleado o PIN incorrecto.');
+
+    try{
+      await cargarPerfilAutenticado();
+    }catch(profileError){
+      await sb.auth.signOut();
+      throw profileError;
+    }
+
+    await enterMain();
+  }catch(e){
+    console.error(e);
+    const msg=(e&&e.message)||'';
+    alert.textContent=msg.includes('vinculado')||msg.includes('activo')
+      ? 'Tu usuario no está habilitado como promotor. Contacta a tu supervisor.'
+      : 'Número de empleado o PIN incorrecto.';
+    alert.classList.remove('hidden');
+  }finally{
+    btn.disabled=false;
+    btn.textContent='Entrar';
+  }
+}
+
+async function enterMain(){
+  showScreen('screen-main');
+  renderUser();
+  await cargarTiendasDeRuta();
+  await cargarVisitaAbierta();
+  renderVisitState();
+}
+
+function renderUser(){
+  const p=state.promotor;
+  document.getElementById('avatar').textContent=initials(p.nombre_completo);
+  document.getElementById('user-name').textContent=p.nombre_completo;
+  document.getElementById('user-meta').textContent=`Empleado ${p.numero_empleado} · Ruta ${p.ruta||'—'} · ${p.region||p.zona||'—'}`;
+}
+
+async function cargarTiendasDeRuta(){
+  const p=state.promotor;
+  const esSupervisor=(p.rol||'').toLowerCase()==='supervisor';
+  let q=sb.from('tiendas').select('id,id_tienda,nombre_tienda,cadena,lat,lng,ruta,zona,ciudad,estado').eq('activa',true);
+  if(esSupervisor){if(!p.zona){state.tiendasRuta=[];return}q=q.ilike('zona',p.zona.trim())}
+  else{if(!p.ruta){state.tiendasRuta=[];return}q=q.ilike('ruta',p.ruta.trim())}
+  const {data,error}=await q.order('nombre_tienda',{ascending:true});
+  if(error){console.error(error);showToast('No se pudieron cargar las tiendas de tu ruta.');state.tiendasRuta=[];return}
+  state.tiendasRuta=data||[];
+  document.getElementById('sheet-route').textContent=esSupervisor?`Zona ${p.zona}`:`Ruta ${p.ruta}`;
+}
+
+async function cargarVisitaAbierta(){
+  const {data,error}=await sb.from('visitas').select('*').eq('codigo_promotor',state.promotor.numero_empleado).is('hora_fin',null).order('hora_inicio',{ascending:false}).limit(1);
+  if(error){console.error(error);return}
+  state.visitaActual=(data&&data[0])||null;
+}
+
+function renderVisitState(){
+  const active=!!state.visitaActual;
+  document.getElementById('card-new-visit').classList.toggle('hidden',active);
+  document.getElementById('card-active-visit').classList.toggle('hidden',!active);
+  document.getElementById('inventory-form-wrap').classList.toggle('hidden',!active);
+  if(active){
+    const v=state.visitaActual;
+    document.getElementById('visit-store-name').textContent=v.nombre_tienda;
+    const distancia=v.distancia_entrada_m!=null?` · GPS ${Math.round(v.distancia_entrada_m)} m de la tienda`:'';
+    document.getElementById('visit-meta').textContent=`ID ${v.id_tienda} · Entrada ${fmtTime(v.hora_inicio)}${distancia}`;
+  }
+}
+
+function openStoreSheet(){
+  if(state.visitaActual){showToast('Primero debes terminar la visita actual.');return}
+  document.getElementById('store-modal').classList.add('show');
+  document.getElementById('store-search').value='';
+  document.getElementById('gps-box').classList.remove('show');
+  renderStores('');
+}
+function closeStoreSheet(){document.getElementById('store-modal').classList.remove('show')}
+
+function renderStores(q=''){
+  const needle=q.trim().toLowerCase();
+  const items=state.tiendasRuta.filter(t=>`${t.nombre_tienda||''} ${t.id_tienda||''}`.toLowerCase().includes(needle));
+  const list=document.getElementById('store-list');
+  list.innerHTML=items.length?items.map(t=>`<div class="store-item" onclick="startVisit('${String(t.id_tienda).replace(/'/g,"\\'")}')"><div class="store-name">${escapeHtml(t.nombre_tienda||t.cadena||'Tienda')}</div><div class="store-meta">ID ${escapeHtml(String(t.id_tienda||'—'))} · Ruta ${escapeHtml(String(t.ruta||'—'))}</div></div>`).join(''):'<div class="empty">No se encontraron tiendas.</div>';
+}
+function escapeHtml(s){return String(s).replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]))}
+
+function getSingleLocation(){
+  return new Promise((resolve,reject)=>{
+    if(!navigator.geolocation)return reject(new Error('Tu dispositivo no permite ubicación.'));
+    navigator.geolocation.getCurrentPosition(
+      p=>resolve({lat:p.coords.latitude,lng:p.coords.longitude,acc:p.coords.accuracy}),
+      e=>reject(new Error(e.code===1?'Debes permitir el acceso a tu ubicación para registrar la entrada.':'No pudimos obtener tu ubicación. Intenta nuevamente.')),
+      {enableHighAccuracy:true,maximumAge:0,timeout:20000}
+    );
+  });
+}
+function distanciaMetros(lat1,lng1,lat2,lng2){const R=6371000,toRad=g=>g*Math.PI/180,dLat=toRad(lat2-lat1),dLng=toRad(lng2-lng1);const a=Math.sin(dLat/2)**2+Math.cos(toRad(lat1))*Math.cos(toRad(lat2))*Math.sin(dLng/2)**2;return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a))}
+
+async function startVisit(idTienda){
+  if(state.visitaActual){showToast('Ya tienes una visita abierta.');return}
+  const tienda=state.tiendasRuta.find(t=>String(t.id_tienda)===String(idTienda));
+  if(!tienda)return;
+  if(tienda.lat==null||tienda.lng==null||isNaN(Number(tienda.lat))||isNaN(Number(tienda.lng))){showToast('Esta tienda no tiene coordenadas válidas. Repórtalo con tu supervisor.',4500);return}
+
+  const box=document.getElementById('gps-box');
+  box.className='gps-box alert alert-info show';
+  box.innerHTML='<span class="spinner"></span> Solicitando ubicación y validando la tienda...';
+  try{
+    const pos=await getSingleLocation();
+
+    // Validación local para respuesta inmediata. La RPC vuelve a validar identidad, ruta y GPS en PostgreSQL.
+    if(pos.acc>MAX_PRECISION_GPS_METROS){
+      box.className='gps-box alert alert-warn show';
+      box.textContent=`La precisión del GPS es de ±${Math.round(pos.acc)} m. Necesitamos una señal de ±${MAX_PRECISION_GPS_METROS} m o mejor. Intenta nuevamente.`;
+      return;
+    }
+    const dist=distanciaMetros(pos.lat,pos.lng,Number(tienda.lat),Number(tienda.lng));
+    const tolerancia=RADIO_ENTRADA_METROS+Math.min(pos.acc,MAX_PRECISION_GPS_METROS);
+    if(dist>tolerancia){
+      box.className='gps-box alert alert-danger show';
+      box.textContent=`No se puede registrar la entrada. Tu ubicación está aproximadamente a ${Math.round(dist)} m de la tienda seleccionada. Radio base permitido: ${RADIO_ENTRADA_METROS} m.`;
+      return;
+    }
+
+    box.className='gps-box alert alert-info show';
+    box.textContent='Ubicación validada. Registrando entrada de forma segura...';
+    const {data,error}=await sb.rpc('iniciar_visita',{
+      p_id_tienda:String(tienda.id_tienda),
+      p_lat:pos.lat,
+      p_lng:pos.lng,
+      p_precision_m:pos.acc
+    });
+    if(error)throw error;
+    if(!data||!data.id)throw new Error('Supabase no devolvió la visita creada.');
+
+    state.visitaActual=data;
+    closeStoreSheet();
+    resetForm();
+    renderVisitState();
+    setTimeout(()=>document.getElementById('inventory-form-wrap').scrollIntoView({behavior:'smooth',block:'start'}),100);
+    showToast('Entrada registrada. Completa el levantamiento.');
+  }catch(e){
+    console.error(e);
+    box.className='gps-box alert alert-danger show';
+    const msg=(e&&e.message)||'No se pudo registrar la entrada.';
+    if(msg.includes('Ya existe una visita abierta')) box.textContent='Ya tienes una visita pendiente. Recarga la página para continuarla.';
+    else if(msg.includes('Fuera del radio permitido')) box.textContent=msg;
+    else if(msg.includes('Tienda no autorizada')) box.textContent='Esta tienda no pertenece a tu ruta o ya no está autorizada.';
+    else if(msg.includes('Precisión GPS insuficiente')) box.textContent='La precisión del GPS no es suficiente. Acércate a una ventana o vuelve a intentarlo.';
+    else box.textContent=msg;
+  }
+}
+
+function toggleConditional(id,show,zeroName){const el=document.getElementById(id);el.classList.toggle('show',show);if(!show&&zeroName)setZero(zeroName)}
+
+function resetForm(){
+  const f=document.getElementById('inventory-form');f.reset();
+  document.querySelectorAll('.conditional').forEach(x=>x.classList.remove('show'));
+  document.querySelectorAll('.error-field').forEach(x=>x.classList.remove('error-field'));
+  document.querySelectorAll('.error-text').forEach(x=>x.remove());
+  document.getElementById('form-errors').classList.add('hidden');
+  document.getElementById('zero-box').classList.remove('show');
+}
+
+document.querySelectorAll('.inv-input').forEach(el=>el.addEventListener('input',recalcZero));
+function recalcZero(){
+  const names=['inventario_hydrolit_manzana','inventario_hydrolit_uva','inventario_hydrolit_coco','inventario_hydrolit_naranja_mandarina','inventario_hydrolit_fresa','inventario_xot','inventario_blist_uva','inventario_blist_limonada_rosa'];
+  const vals=names.map(num);
+  const complete=vals.every(v=>v!==null&&!Number.isNaN(v));
+  const allZero=complete&&vals.every(v=>v===0);
+  document.getElementById('zero-box').classList.toggle('show',allZero);
+  return allZero;
+}
+
+function clearErrors(){
+  document.querySelectorAll('.error-field').forEach(x=>x.classList.remove('error-field'));
+  document.querySelectorAll('.error-text').forEach(x=>x.remove());
+  const box=document.getElementById('form-errors');box.classList.add('hidden');box.textContent='';
+}
+function markError(name,msg){
+  const el=document.querySelector(`[name="${name}"]`);if(el){el.classList.add('error-field');const parent=el.closest('.field')||el.parentElement;if(parent&&!parent.querySelector('.error-text')){const m=document.createElement('div');m.className='error-text';m.textContent=msg;parent.appendChild(m)}}
+}
+
+function collectAndValidate(){
+  clearErrors();const errors=[];
+  const requiredNums=['inventario_hydrolit_manzana','inventario_hydrolit_uva','inventario_hydrolit_coco','inventario_hydrolit_naranja_mandarina','inventario_hydrolit_fresa','inventario_xot','xot_frentes_refrigerador','inventario_blist_uva','inventario_blist_limonada_rosa'];
+  requiredNums.forEach(n=>{const v=num(n);if(v===null||Number.isNaN(v)||v<0||!Number.isInteger(v)){errors.push('Completa todos los inventarios y cantidades con números enteros válidos.');markError(n,'Dato obligatorio.') }});
+
+  const bools=['hydrolit_anaquel','hydrolit_cabecera','hydrolit_refrigerador','hydrolit_exhibicion_adicional','xot_candado','xot_exhibicion_adicional','blist_anaquel','blist_refrigerador','blist_exhibicion_adicional'];
+  bools.forEach(n=>{if(boolRadio(n)===null){errors.push('Faltan preguntas de Sí/No por responder.');const first=document.querySelector(`input[name="${n}"]`);if(first){const seg=first.closest('.segment');if(seg)seg.classList.add('error-field')}}});
+
+  const d={
+    inventario_hydrolit_manzana:num('inventario_hydrolit_manzana'),inventario_hydrolit_uva:num('inventario_hydrolit_uva'),inventario_hydrolit_coco:num('inventario_hydrolit_coco'),inventario_hydrolit_naranja_mandarina:num('inventario_hydrolit_naranja_mandarina'),inventario_hydrolit_fresa:num('inventario_hydrolit_fresa'),
+    hydrolit_anaquel:boolRadio('hydrolit_anaquel'),hydrolit_frentes_anaquel:boolRadio('hydrolit_anaquel')===true?num('hydrolit_frentes_anaquel'):0,hydrolit_cabecera:boolRadio('hydrolit_cabecera'),hydrolit_refrigerador:boolRadio('hydrolit_refrigerador'),hydrolit_frentes_refrigerador:boolRadio('hydrolit_refrigerador')===true?num('hydrolit_frentes_refrigerador'):0,
+    inventario_xot:num('inventario_xot'),xot_frentes_refrigerador:num('xot_frentes_refrigerador'),xot_candado:boolRadio('xot_candado'),xot_exhibicion_adicional:boolRadio('xot_exhibicion_adicional'),xot_cantidad_exhibiciones:boolRadio('xot_exhibicion_adicional')===true?num('xot_cantidad_exhibiciones'):0,
+    hydrolit_exhibicion_adicional:boolRadio('hydrolit_exhibicion_adicional'),hydrolit_cantidad_exhibiciones:boolRadio('hydrolit_exhibicion_adicional')===true?num('hydrolit_cantidad_exhibiciones'):0,
+    inventario_blist_uva:num('inventario_blist_uva'),inventario_blist_limonada_rosa:num('inventario_blist_limonada_rosa'),blist_anaquel:boolRadio('blist_anaquel'),blist_frentes_anaquel:boolRadio('blist_anaquel')===true?num('blist_frentes_anaquel'):0,blist_refrigerador:boolRadio('blist_refrigerador'),blist_frentes_refrigerador:boolRadio('blist_refrigerador')===true?num('blist_frentes_refrigerador'):0,blist_exhibicion_adicional:boolRadio('blist_exhibicion_adicional'),blist_cantidad_exhibiciones:boolRadio('blist_exhibicion_adicional')===true?num('blist_cantidad_exhibiciones'):0,
+    motivo_todo_cero:document.querySelector('[name="motivo_todo_cero"]').value.trim(),confirmado_todo_cero:document.querySelector('[name="confirmado_todo_cero"]').checked
+  };
+
+  const requirePositive=(cond,name,label)=>{if(cond&&(d[name]===null||d[name]<=0||!Number.isInteger(d[name]))){errors.push(`${label} debe ser mayor a 0.`);markError(name,'Debe ser mayor a 0.')}};
+  requirePositive(d.hydrolit_anaquel,'hydrolit_frentes_anaquel','Frentes de Hydrolit en anaquel');
+  requirePositive(d.hydrolit_refrigerador,'hydrolit_frentes_refrigerador','Frentes de Hydrolit en refrigerador');
+  requirePositive(d.hydrolit_exhibicion_adicional,'hydrolit_cantidad_exhibiciones','Exhibiciones adicionales de Hydrolit');
+  requirePositive(d.xot_exhibicion_adicional,'xot_cantidad_exhibiciones','Exhibiciones adicionales de XOT');
+  requirePositive(d.blist_anaquel,'blist_frentes_anaquel','Frentes de Blist en anaquel');
+  requirePositive(d.blist_refrigerador,'blist_frentes_refrigerador','Frentes de Blist en refrigerador');
+  requirePositive(d.blist_exhibicion_adicional,'blist_cantidad_exhibiciones','Exhibiciones adicionales de Blist');
+
+  // Regla discutida: inventario XOT 0 + frentes > 0 es inconsistente.
+  if(d.inventario_xot===0&&d.xot_frentes_refrigerador>0){errors.push('XOT: no puedes reportar 0 piezas de inventario y al mismo tiempo frentes en refrigerador.');markError('inventario_xot','Revisa inventario vs. frentes.');markError('xot_frentes_refrigerador','Revisa inventario vs. frentes.')}
+
+  const hydTotal=[d.inventario_hydrolit_manzana,d.inventario_hydrolit_uva,d.inventario_hydrolit_coco,d.inventario_hydrolit_naranja_mandarina,d.inventario_hydrolit_fresa].reduce((a,b)=>a+(Number(b)||0),0);
+  if(hydTotal===0&&(d.hydrolit_anaquel||d.hydrolit_cabecera||d.hydrolit_refrigerador||d.hydrolit_exhibicion_adicional)){errors.push('Hydrolit: reportaste inventario total 0, pero también presencia o exhibición del producto.');}
+  const blistTotal=(Number(d.inventario_blist_uva)||0)+(Number(d.inventario_blist_limonada_rosa)||0);
+  if(blistTotal===0&&(d.blist_anaquel||d.blist_refrigerador||d.blist_exhibicion_adicional)){errors.push('Blist: reportaste inventario total 0, pero también presencia o exhibición del producto.');}
+
+  const allInv=[d.inventario_hydrolit_manzana,d.inventario_hydrolit_uva,d.inventario_hydrolit_coco,d.inventario_hydrolit_naranja_mandarina,d.inventario_hydrolit_fresa,d.inventario_xot,d.inventario_blist_uva,d.inventario_blist_limonada_rosa];
+  const allZero=allInv.every(v=>v===0);
+  document.getElementById('zero-box').classList.toggle('show',allZero);
+  if(allZero&&(!d.motivo_todo_cero||!d.confirmado_todo_cero)){errors.push('Si todo el inventario está en 0 debes indicar el motivo y confirmar la revisión.');}
+
+  return {data:d,errors:[...new Set(errors)]};
+}
+
+async function submitLevantamiento(){
+  if(!state.visitaActual){showToast('No hay una visita activa.');return}
+  const {data,errors}=collectAndValidate();
+  if(errors.length){
+    const box=document.getElementById('form-errors');
+    box.innerHTML='<b>Revisa antes de enviar:</b><br>• '+errors.map(escapeHtml).join('<br>• ');
+    box.classList.remove('hidden');
+    box.scrollIntoView({behavior:'smooth',block:'center'});
+    return;
+  }
+
+  const btn=document.getElementById('btn-submit');
+  btn.disabled=true;
+  btn.innerHTML='<span class="spinner"></span>Guardando y registrando salida...';
+  try{
+    const {data:resultado,error}=await sb.rpc('finalizar_visita',{
+      p_visita_id:Number(state.visitaActual.id),
+      p_respuestas:data
+    });
+    if(error)throw error;
+
+    const tienda=state.visitaActual.nombre_tienda;
+    const duracion=resultado&&resultado.duracion_min!=null?Number(resultado.duracion_min):null;
+    state.visitaActual=null;
+    resetForm();
+    renderVisitState();
+    window.scrollTo({top:0,behavior:'smooth'});
+    showToast(`${tienda}: respuestas enviadas y salida registrada${duracion!==null?` · ${duracion} min`:''}.`,4500);
+  }catch(e){
+    console.error(e);
+    const msg=(e&&e.message)||'';
+    if(msg.includes('Faltan respuestas')) showToast('Faltan respuestas obligatorias. Revisa el formulario.',5000);
+    else if(msg.includes('duplicate')||msg.includes('unique')) showToast('Este levantamiento ya fue registrado. Recarga la página.',5000);
+    else if(msg.includes('check constraint')) showToast('Supabase detectó una combinación de respuestas incoherente. Revisa inventarios, frentes y exhibiciones.',5500);
+    else showToast('No se pudo cerrar la visita. Tus campos siguen en pantalla; vuelve a enviar cuando tengas conexión.',5500);
+  }finally{
+    btn.disabled=false;
+    btn.textContent='Enviar respuestas y registrar salida';
+  }
+}
+
+async function logout(){
+  if(state.visitaActual&&!confirm('Tienes una visita en curso. Si cierras sesión seguirá pendiente hasta que vuelvas a entrar. ¿Continuar?'))return;
+  await sb.auth.signOut();
+  state={promotor:null,tiendasRuta:[],visitaActual:null};
+  resetForm();
+  showScreen('screen-login');
+  document.getElementById('input-pin').value='';
+}
+
+window.addEventListener('load',async()=>{
+  try{
+    const {data:{session}}=await sb.auth.getSession();
+    if(session){
+      await cargarPerfilAutenticado();
+      await enterMain();
+    }else{
+      showScreen('screen-login');
+    }
+  }catch(e){
+    console.error(e);
+    await sb.auth.signOut();
+    showScreen('screen-login');
+    const alert=document.getElementById('alert-login');
+    alert.textContent='Tu sesión no es válida o tu usuario no está vinculado a un promotor activo.';
+    alert.classList.remove('hidden');
+  }
+});
+</script>
+</body>
+</html>
