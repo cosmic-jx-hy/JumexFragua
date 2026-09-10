@@ -3,784 +3,463 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Admin — Jumex Fragua</title>
+<title>Admin V2 — Jumex Fragua</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
-  :root {
-    --brand: #1D9E75; --brand-dark: #0F6E56; --brand-light: #E1F5EE;
-    --danger: #E24B4A; --danger-light: #FCEBEB;
-    --amber: #EF9F27; --amber-light: #FAEEDA;
-    --gray-50: #F8F7F4; --gray-100: #F1EFE8; --gray-200: #E0DED6;
-    --gray-400: #888780; --gray-600: #5F5E5A; --gray-900: #2C2C2A;
-    --white: #ffffff;
-    --sidebar: 280px;
-    --radius: 10px;
-  }
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--gray-100); color: var(--gray-900); height: 100vh; overflow: hidden; }
+:root{
+  --brand:#1D9E75;--brand-dark:#0F6E56;--brand-light:#E1F5EE;
+  --danger:#E24B4A;--danger-light:#FCEBEB;--amber:#EF9F27;--amber-light:#FAEEDA;
+  --gray-25:#FCFBF8;--gray-50:#F8F7F4;--gray-100:#F1EFE8;--gray-200:#E0DED6;
+  --gray-400:#888780;--gray-600:#5F5E5A;--gray-900:#2C2C2A;--white:#fff;
+  --radius:12px;--sidebar:248px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:var(--gray-100);color:var(--gray-900);min-height:100vh}
+button,input,select{font:inherit}
+button{cursor:pointer}
+.hidden{display:none!important}
 
-  #login-overlay { position: fixed; inset: 0; background: var(--gray-100); display: flex; align-items: center; justify-content: center; z-index: 1000; }
-  .login-box { background: var(--white); border-radius: 16px; padding: 40px 36px; width: 360px; border: 0.5px solid var(--gray-200); }
-  .login-box h1 { font-size: 20px; font-weight: 600; margin-bottom: 4px; }
-  .login-box p { font-size: 13px; color: var(--gray-600); margin-bottom: 24px; }
-  .field { margin-bottom: 14px; }
-  .field label { display: block; font-size: 12px; font-weight: 500; color: var(--gray-600); margin-bottom: 5px; }
-  .field input { width: 100%; padding: 10px 12px; border: 1px solid var(--gray-200); border-radius: var(--radius); font-size: 14px; outline: none; }
-  .field input:focus { border-color: var(--brand); }
-  .btn { padding: 10px 18px; border: none; border-radius: var(--radius); font-size: 13px; font-weight: 500; cursor: pointer; transition: opacity 0.15s; }
-  .btn:hover { opacity: 0.85; }
-  .btn-primary { background: var(--brand); color: var(--white); width: 100%; padding: 12px; font-size: 14px; }
-  .btn-sm { padding: 6px 12px; font-size: 12px; }
-  .btn-outline { background: var(--white); border: 1px solid var(--gray-200); color: var(--gray-900); }
-  .btn-danger { background: var(--danger); color: var(--white); }
-  .btn-success { background: var(--brand); color: var(--white); }
-  #login-err { font-size: 12px; color: var(--danger); margin-top: 8px; display: none; }
+#login-overlay{position:fixed;inset:0;background:var(--gray-100);display:flex;align-items:center;justify-content:center;z-index:1000;padding:20px}
+.login-box{background:#fff;border:1px solid var(--gray-200);border-radius:18px;padding:36px;width:380px;max-width:100%;box-shadow:0 12px 36px rgba(0,0,0,.05)}
+.login-mark{width:44px;height:44px;border-radius:12px;background:var(--brand-light);display:flex;align-items:center;justify-content:center;color:var(--brand-dark);font-size:22px;margin-bottom:18px}
+.login-box h1{font-size:21px;margin-bottom:5px}.login-box p{font-size:13px;color:var(--gray-600);margin-bottom:22px}
+.field{margin-bottom:14px}.field label{display:block;font-size:12px;font-weight:650;color:var(--gray-600);margin-bottom:5px}
+.field input,.field select{width:100%;padding:10px 12px;border:1px solid var(--gray-200);border-radius:9px;outline:none;background:#fff;color:var(--gray-900)}
+.field input:focus,.field select:focus{border-color:var(--brand)}
+.login-error{display:none;background:var(--danger-light);color:#791F1F;padding:10px 12px;border-radius:9px;font-size:12px;margin-bottom:12px;line-height:1.45}
 
-  #app { height: 100vh; display: flex; flex-direction: column; }
-  .topbar { height: 52px; background: var(--white); border-bottom: 0.5px solid var(--gray-200); display: flex; align-items: center; padding: 0 20px; gap: 16px; flex-shrink: 0; }
-  .topbar-logo { font-size: 15px; font-weight: 600; color: var(--brand-dark); margin-right: 8px; }
-  .topbar-logo span { color: var(--gray-400); font-weight: 400; }
-  .topbar-tab { font-size: 13px; padding: 6px 14px; border-radius: 20px; cursor: pointer; color: var(--gray-600); transition: background 0.15s; border: none; background: none; }
-  .topbar-tab.active { background: var(--brand-light); color: var(--brand-dark); font-weight: 500; }
-  .topbar-spacer { flex: 1; }
-  .live-badge { font-size: 11px; background: var(--brand-light); color: var(--brand-dark); padding: 3px 10px; border-radius: 20px; display: flex; align-items: center; gap: 5px; }
-  .live-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--brand); animation: pulse 1.5s infinite; }
-  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+.btn{border:0;border-radius:9px;padding:9px 14px;font-size:13px;font-weight:650;transition:.15s}
+.btn:hover{opacity:.88}.btn:disabled{opacity:.5;cursor:not-allowed}.btn-primary{background:var(--brand);color:#fff}.btn-outline{background:#fff;border:1px solid var(--gray-200);color:var(--gray-900)}.btn-danger{background:var(--danger);color:#fff}.btn-amber{background:var(--amber-light);color:#633806}.btn-sm{padding:6px 10px;font-size:12px}.btn-full{width:100%;padding:12px}
 
-  .main-wrap { flex: 1; display: flex; overflow: hidden; }
+#app{display:none;min-height:100vh}
+.sidebar{position:fixed;left:0;top:0;bottom:0;width:var(--sidebar);background:#fff;border-right:1px solid var(--gray-200);padding:18px 14px;display:flex;flex-direction:column;z-index:20}
+.brand{padding:4px 8px 20px;font-size:17px;font-weight:750;color:var(--brand-dark)}.brand span{color:var(--gray-400);font-weight:450}.brand small{display:block;font-size:10px;letter-spacing:.8px;color:var(--gray-400);margin-top:3px;text-transform:uppercase}
+.nav{display:flex;flex-direction:column;gap:5px}.nav-btn{border:0;background:transparent;text-align:left;padding:10px 11px;border-radius:9px;color:var(--gray-600);font-size:13px;font-weight:550}.nav-btn:hover{background:var(--gray-50)}.nav-btn.active{background:var(--brand-light);color:var(--brand-dark);font-weight:700}
+.sidebar-foot{margin-top:auto;border-top:1px solid var(--gray-100);padding:14px 8px 0}.admin-email{font-size:11px;color:var(--gray-400);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-bottom:8px}
 
-  .sidebar { width: var(--sidebar); background: var(--white); border-right: 0.5px solid var(--gray-200); display: flex; flex-direction: column; overflow: hidden; flex-shrink: 0; }
-  .sidebar-header { padding: 14px 16px 10px; border-bottom: 0.5px solid var(--gray-100); }
-  .sidebar-title { font-size: 12px; font-weight: 600; color: var(--gray-400); text-transform: uppercase; letter-spacing: 0.7px; }
-  .sidebar-search { margin-top: 8px; position: relative; }
-  .sidebar-search input { width: 100%; padding: 7px 10px 7px 30px; border: 1px solid var(--gray-200); border-radius: var(--radius); font-size: 13px; outline: none; }
-  .sidebar-search input:focus { border-color: var(--brand); }
-  .sidebar-search::before { content: '⌕'; position: absolute; left: 10px; top: 7px; color: var(--gray-400); font-size: 14px; }
-  .promotor-list { flex: 1; overflow-y: auto; }
-  .promotor-item { display: flex; align-items: center; gap: 10px; padding: 10px 16px; border-bottom: 0.5px solid var(--gray-100); cursor: pointer; transition: background 0.1s; }
-  .promotor-item:hover { background: var(--gray-50); }
-  .p-avatar { width: 32px; height: 32px; border-radius: 50%; background: var(--gray-100); display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 600; color: var(--gray-600); flex-shrink: 0; }
-  .p-avatar.active { background: var(--brand-light); color: var(--brand-dark); }
-  .p-info { flex: 1; min-width: 0; }
-  .p-name { font-size: 13px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .p-sub { font-size: 11px; color: var(--gray-400); margin-top: 1px; }
-  .p-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--gray-200); flex-shrink: 0; }
-  .p-dot.on { background: var(--brand); }
+.shell{margin-left:var(--sidebar);min-height:100vh}.topbar{height:62px;background:#fff;border-bottom:1px solid var(--gray-200);display:flex;align-items:center;padding:0 24px;position:sticky;top:0;z-index:15}.top-title{font-size:15px;font-weight:700}.top-sub{font-size:11px;color:var(--gray-400);margin-left:10px}.top-spacer{flex:1}.refresh-info{font-size:11px;color:var(--gray-400);margin-right:10px}
+.main{padding:22px;max-width:1500px;margin:0 auto}.tab{display:none}.tab.active{display:block}
+.page-head{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;margin-bottom:18px}.page-head h1{font-size:21px}.page-head p{font-size:12px;color:var(--gray-600);margin-top:4px}.actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 
-  .content { flex: 1; overflow: hidden; display: flex; flex-direction: column; }
-  .tab-content { display: none; flex: 1; overflow: hidden; }
-  .tab-content.active { display: flex; flex-direction: column; }
-  #map { flex: 1; }
+.filters{background:#fff;border:1px solid var(--gray-200);border-radius:var(--radius);padding:12px;margin-bottom:16px;display:flex;align-items:flex-end;gap:10px;flex-wrap:wrap}.filter{min-width:140px;flex:0 1 190px}.filter label{display:block;font-size:10px;font-weight:700;color:var(--gray-400);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px}.filter input,.filter select{width:100%;padding:8px 9px;border:1px solid var(--gray-200);border-radius:8px;background:#fff;font-size:12px;outline:none}.filter input:focus,.filter select:focus{border-color:var(--brand)}
 
-  .stats-bar { display: flex; gap: 0; border-bottom: 0.5px solid var(--gray-200); background: var(--white); flex-shrink: 0; }
-  .stat-item { flex: 1; padding: 10px 16px; border-right: 0.5px solid var(--gray-200); }
-  .stat-item:last-child { border-right: none; }
-  .stat-num { font-size: 20px; font-weight: 600; color: var(--gray-900); }
-  .stat-label { font-size: 11px; color: var(--gray-400); margin-top: 1px; }
-  .stat-num.green { color: var(--brand); }
-  .stat-num.amber { color: var(--amber); }
+.stats{display:grid;grid-template-columns:repeat(5,minmax(150px,1fr));gap:10px;margin-bottom:16px}.stat{background:#fff;border:1px solid var(--gray-200);border-radius:var(--radius);padding:15px}.stat-value{font-size:25px;font-weight:760;letter-spacing:-.7px}.stat-label{font-size:11px;color:var(--gray-400);margin-top:3px}.green{color:var(--brand-dark)}.red{color:var(--danger)}.amber{color:#A15C00}
 
-  .tab-pad { padding: 20px; overflow-y: auto; flex: 1; }
-  .section-title { font-size: 13px; font-weight: 600; color: var(--gray-900); margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between; }
-  .table-wrap { background: var(--white); border-radius: var(--radius); border: 0.5px solid var(--gray-200); overflow: hidden; margin-bottom: 24px; }
-  table { width: 100%; border-collapse: collapse; font-size: 13px; }
-  th { text-align: left; padding: 10px 14px; font-size: 11px; font-weight: 600; color: var(--gray-400); text-transform: uppercase; letter-spacing: 0.6px; background: var(--gray-50); border-bottom: 0.5px solid var(--gray-200); }
-  td { padding: 10px 14px; border-bottom: 0.5px solid var(--gray-100); vertical-align: middle; }
-  tr:last-child td { border-bottom: none; }
-  tr:hover td { background: var(--gray-50); }
-  .badge { display: inline-block; padding: 2px 8px; border-radius: 20px; font-size: 11px; font-weight: 500; }
-  .badge-green { background: var(--brand-light); color: var(--brand-dark); }
-  .badge-gray { background: var(--gray-100); color: var(--gray-600); }
-  .badge-amber { background: var(--amber-light); color: #633806; }
-  .badge-red { background: var(--danger-light); color: #791F1F; }
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px}.card{background:#fff;border:1px solid var(--gray-200);border-radius:var(--radius);overflow:hidden}.card-head{padding:13px 15px;border-bottom:1px solid var(--gray-100);display:flex;align-items:center;justify-content:space-between}.card-head h2{font-size:13px}.card-head span{font-size:11px;color:var(--gray-400)}.card-body{padding:14px}
+.region-row{display:grid;grid-template-columns:110px 1fr 80px;gap:10px;align-items:center;padding:9px 0;border-bottom:1px solid var(--gray-100)}.region-row:last-child{border-bottom:0}.region-name{font-size:12px;font-weight:700}.progress{height:7px;background:var(--gray-100);border-radius:10px;overflow:hidden}.progress>span{display:block;height:100%;background:var(--brand);border-radius:10px}.region-pct{text-align:right;font-size:12px;font-weight:700}
+.metric-line{display:flex;justify-content:space-between;gap:12px;padding:8px 0;border-bottom:1px solid var(--gray-100);font-size:12px}.metric-line:last-child{border-bottom:0}.metric-line span:first-child{color:var(--gray-600)}.metric-line span:last-child{font-weight:700}
 
-  .modal-bg { position: fixed; inset: 0; background: rgba(0,0,0,0.35); display: none; align-items: center; justify-content: center; z-index: 500; }
-  .modal-bg.show { display: flex; }
-  .modal { background: var(--white); border-radius: 14px; padding: 28px; width: 460px; max-height: 90vh; overflow-y: auto; }
-  .modal h2 { font-size: 17px; font-weight: 600; margin-bottom: 16px; }
-  .modal-footer { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; }
-  .modal select { width: 100%; padding: 9px 12px; border: 1px solid var(--gray-200); border-radius: var(--radius); font-size: 14px; outline: none; margin-bottom: 12px; }
-  .modal input[type=text] { width: 100%; padding: 9px 12px; border: 1px solid var(--gray-200); border-radius: var(--radius); font-size: 14px; outline: none; margin-bottom: 12px; }
-  .modal-label { font-size: 12px; font-weight: 500; color: var(--gray-600); margin-bottom: 4px; }
+.table-wrap{background:#fff;border:1px solid var(--gray-200);border-radius:var(--radius);overflow:auto;margin-bottom:18px}.table-title{padding:13px 15px;border-bottom:1px solid var(--gray-100);font-size:13px;font-weight:700;display:flex;justify-content:space-between;align-items:center;gap:10px}.table-title small{font-size:11px;color:var(--gray-400);font-weight:450}
+table{width:100%;border-collapse:collapse;font-size:12px;min-width:880px}th{text-align:left;padding:9px 11px;font-size:10px;text-transform:uppercase;letter-spacing:.55px;color:var(--gray-400);background:var(--gray-50);border-bottom:1px solid var(--gray-200);white-space:nowrap}td{padding:10px 11px;border-bottom:1px solid var(--gray-100);vertical-align:middle}tr:last-child td{border-bottom:0}tbody tr:hover td{background:var(--gray-25)}
+.badge{display:inline-flex;align-items:center;padding:3px 8px;border-radius:30px;font-size:10px;font-weight:700;white-space:nowrap}.badge-green{background:var(--brand-light);color:var(--brand-dark)}.badge-gray{background:var(--gray-100);color:var(--gray-600)}.badge-red{background:var(--danger-light);color:#791F1F}.badge-amber{background:var(--amber-light);color:#633806}.mono{font-family:ui-monospace,SFMono-Regular,Consolas,monospace}.muted{color:var(--gray-400)}.link{color:var(--brand-dark);font-weight:700;cursor:pointer;text-decoration:none}.nowrap{white-space:nowrap}
 
-  .export-card { background: var(--white); border-radius: var(--radius); border: 0.5px solid var(--gray-200); padding: 20px; margin-bottom: 16px; }
-  .export-card h3 { font-size: 14px; font-weight: 600; margin-bottom: 6px; }
-  .export-card p { font-size: 13px; color: var(--gray-600); margin-bottom: 14px; line-height: 1.5; }
-  .export-actions { display: flex; gap: 10px; flex-wrap: wrap; }
-  .step-list { font-size: 13px; color: var(--gray-600); line-height: 1.8; padding-left: 4px; }
-  .step-list li { margin-bottom: 4px; }
-  code { background: var(--gray-50); padding: 2px 6px; border-radius: 4px; font-size: 12px; }
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.38);display:none;align-items:center;justify-content:center;z-index:100;padding:18px}.modal-bg.show{display:flex}.modal{background:#fff;border-radius:16px;width:680px;max-width:100%;max-height:90vh;overflow:auto;box-shadow:0 18px 60px rgba(0,0,0,.18)}.modal-sm{width:480px}.modal-head{padding:18px 20px;border-bottom:1px solid var(--gray-100);display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;background:#fff;z-index:2}.modal-head h2{font-size:17px}.modal-close{border:0;background:var(--gray-100);width:32px;height:32px;border-radius:50%;font-size:17px}.modal-body{padding:18px 20px}.modal-footer{padding:14px 20px;border-top:1px solid var(--gray-100);display:flex;justify-content:flex-end;gap:8px;position:sticky;bottom:0;background:#fff}.detail-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}.detail-box{background:var(--gray-50);border-radius:9px;padding:10px}.detail-label{font-size:9px;color:var(--gray-400);text-transform:uppercase;letter-spacing:.5px}.detail-value{font-size:12px;font-weight:650;margin-top:3px;word-break:break-word}.section-label{font-size:11px;font-weight:800;color:var(--brand-dark);text-transform:uppercase;letter-spacing:.6px;margin:18px 0 8px}.inventory-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.inv{border:1px solid var(--gray-200);border-radius:9px;padding:9px}.inv b{display:block;font-size:11px}.inv span{font-size:13px;font-weight:750;margin-top:3px;display:block}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.form-grid .full{grid-column:1/-1}.help{background:var(--amber-light);color:#633806;padding:10px 12px;border-radius:9px;font-size:11px;line-height:1.5;margin-bottom:14px}
 
-  .spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid rgba(255,255,255,0.4); border-top-color: white; border-radius: 50%; animation: spin 0.7s linear infinite; vertical-align: middle; margin-right: 5px; }
-  @keyframes spin { to { transform: rotate(360deg); } }
-  .toast-admin { position: fixed; bottom: 24px; right: 24px; background: var(--gray-900); color: var(--white); padding: 10px 18px; border-radius: 10px; font-size: 13px; transform: translateY(60px); transition: transform 0.3s; z-index: 600; }
-  .toast-admin.show { transform: translateY(0); }
+.export-card{background:#fff;border:1px solid var(--gray-200);border-radius:var(--radius);padding:18px;margin-bottom:14px}.export-card h3{font-size:14px;margin-bottom:5px}.export-card p{font-size:12px;color:var(--gray-600);line-height:1.55;margin-bottom:12px}
+.empty{text-align:center;padding:28px 12px;color:var(--gray-400);font-size:12px}.toast{position:fixed;right:22px;bottom:22px;background:var(--gray-900);color:#fff;padding:10px 15px;border-radius:10px;font-size:12px;z-index:200;transform:translateY(70px);opacity:0;transition:.25s}.toast.show{transform:translateY(0);opacity:1}
+
+@media(max-width:1050px){.stats{grid-template-columns:repeat(3,1fr)}.grid-2{grid-template-columns:1fr}}
+@media(max-width:760px){:root{--sidebar:0px}.sidebar{display:none}.shell{margin-left:0}.main{padding:14px}.topbar{padding:0 14px}.stats{grid-template-columns:1fr 1fr}.page-head{align-items:flex-start;flex-direction:column}.detail-grid,.form-grid,.inventory-grid{grid-template-columns:1fr}.form-grid .full{grid-column:auto}}
 </style>
 </head>
 <body>
 
 <div id="login-overlay">
   <div class="login-box">
+    <div class="login-mark">✦</div>
     <h1>Panel de administración</h1>
-    <p>Jumex Fragua · Solo acceso autorizado</p>
-    <div class="field"><label>Correo</label><input type="email" id="login-user" placeholder="admin@jumexfragua.com"></div>
-    <div class="field"><label>Contraseña</label><input type="password" id="login-pass" placeholder="••••••••"></div>
-    <div id="login-err">Credenciales incorrectas.</div>
-    <button class="btn btn-primary" style="margin-top:8px" onclick="doLogin()">Entrar</button>
+    <p>Jumex Fragua · Acceso exclusivo para administradores autorizados.</p>
+    <div class="field"><label>Correo</label><input type="email" id="login-user" autocomplete="username" placeholder="admin@dominio.com"></div>
+    <div class="field"><label>Contraseña</label><input type="password" id="login-pass" autocomplete="current-password" placeholder="••••••••"></div>
+    <div class="login-error" id="login-err"></div>
+    <button class="btn btn-primary btn-full" id="btn-login" onclick="doLogin()">Entrar</button>
   </div>
 </div>
 
-<div id="app" style="display:none">
-  <div class="topbar">
-    <div class="topbar-logo">Jumex <span>Fragua</span> <span style="color:#ccc;margin:0 4px">|</span> <span style="font-size:12px;color:var(--gray-400)">Admin</span></div>
-    <button class="topbar-tab active" onclick="switchTab('mapa',this)">Mapa en vivo</button>
-    <button class="topbar-tab" onclick="switchTab('promotores',this)">Promotores</button>
-    <button class="topbar-tab" onclick="switchTab('tiendas',this)">Tiendas</button>
-    <button class="topbar-tab" onclick="switchTab('exportar',this)">Exportar / Limpiar</button>
-    <div class="topbar-spacer"></div>
-    <div style="display:flex; align-items:center; gap:6px; margin-right:14px;">
-      <span style="font-size:12px; color:var(--gray-400);">Palabra clave para:</span>
-      <input type="date" id="input-palabra-fecha" style="padding:5px 8px; border:1px solid #ddd; border-radius:6px; font-size:13px;" onchange="cargarPalabraClavePorFecha(this.value)">
-      <input type="text" id="input-palabra-clave" placeholder="ej. AGUILA" style="padding:5px 8px; border:1px solid #ddd; border-radius:6px; font-size:13px; width:120px; text-transform:uppercase;">
-      <button class="btn btn-success" style="padding:5px 10px; font-size:12px;" onclick="guardarPalabraClave()">Guardar</button>
+<div id="app">
+  <aside class="sidebar">
+    <div class="brand">Jumex <span>Fragua</span><small>Administración V2</small></div>
+    <nav class="nav">
+      <button class="nav-btn active" data-tab="dashboard" onclick="switchTab('dashboard',this)">Resumen operativo</button>
+      <button class="nav-btn" data-tab="visitas" onclick="switchTab('visitas',this)">Visitas y capturas</button>
+      <button class="nav-btn" data-tab="promotores" onclick="switchTab('promotores',this)">Promotores</button>
+      <button class="nav-btn" data-tab="tiendas" onclick="switchTab('tiendas',this)">Tiendas</button>
+      <button class="nav-btn" data-tab="exportar" onclick="switchTab('exportar',this)">Exportar</button>
+    </nav>
+    <div class="sidebar-foot">
+      <div class="admin-email" id="admin-email">—</div>
+      <button class="btn btn-outline btn-sm" style="width:100%" onclick="doLogout()">Cerrar sesión</button>
     </div>
-    <span class="live-badge"><span class="live-dot"></span>En vivo</span>
-    <button class="btn btn-outline btn-sm" style="margin-left:12px" onclick="doLogout()">Cerrar sesión</button>
+  </aside>
+
+  <div class="shell">
+    <header class="topbar">
+      <div class="top-title" id="top-title">Resumen operativo</div>
+      <div class="top-sub">Meta: 6 capturas por promotor / día</div>
+      <div class="top-spacer"></div>
+      <span class="refresh-info" id="refresh-info">—</span>
+      <button class="btn btn-outline btn-sm" onclick="refreshCurrent()">Actualizar</button>
+    </header>
+
+    <main class="main">
+      <section class="tab active" id="tab-dashboard">
+        <div class="page-head">
+          <div><h1>Resumen operativo</h1><p>Cumplimiento de levantamientos terminados, no de simples entradas a tienda.</p></div>
+          <div class="actions"><input type="date" id="dash-fecha" onchange="loadDashboard()" style="padding:8px 10px;border:1px solid var(--gray-200);border-radius:8px;background:#fff"></div>
+        </div>
+
+        <div class="stats">
+          <div class="stat"><div class="stat-value green" id="st-capturas">0</div><div class="stat-label">Capturas completadas</div></div>
+          <div class="stat"><div class="stat-value" id="st-meta">0</div><div class="stat-label">Meta del día</div></div>
+          <div class="stat"><div class="stat-value" id="st-cumplimiento">0%</div><div class="stat-label">Cumplimiento</div></div>
+          <div class="stat"><div class="stat-value amber" id="st-abiertas">0</div><div class="stat-label">Visitas en curso</div></div>
+          <div class="stat"><div class="stat-value red" id="st-sin-captura">0</div><div class="stat-label">Promotores sin captura</div></div>
+        </div>
+
+        <div class="grid-2">
+          <div class="card">
+            <div class="card-head"><h2>Cumplimiento por región</h2><span id="region-sub">—</span></div>
+            <div class="card-body" id="region-progress"></div>
+          </div>
+          <div class="card">
+            <div class="card-head"><h2>Calidad y permanencia</h2><span>Visitas completadas</span></div>
+            <div class="card-body">
+              <div class="metric-line"><span>Duración promedio</span><span id="m-duracion">—</span></div>
+              <div class="metric-line"><span>Visitas de 40 min o más</span><span id="m-40">—</span></div>
+              <div class="metric-line"><span>Levantamientos todo en cero</span><span id="m-cero">—</span></div>
+              <div class="metric-line"><span>Distancia GPS promedio al ingreso</span><span id="m-distancia">—</span></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="table-wrap">
+          <div class="table-title">Cumplimiento por promotor <small id="prom-cump-sub">—</small></div>
+          <table><thead><tr><th>Promotor</th><th>No. empleado</th><th>Región</th><th>Ruta</th><th>Capturas</th><th>Meta</th><th>Cumplimiento</th><th>Estado</th><th>Última captura</th></tr></thead><tbody id="tabla-cumplimiento"></tbody></table>
+        </div>
+
+        <div class="table-wrap">
+          <div class="table-title">Últimas capturas <small>Haz clic en Ver para revisar el levantamiento</small></div>
+          <table><thead><tr><th>Hora</th><th>Promotor</th><th>Ruta</th><th>Tienda</th><th>Duración</th><th>GPS ingreso</th><th>Todo cero</th><th></th></tr></thead><tbody id="tabla-recientes"></tbody></table>
+        </div>
+      </section>
+
+      <section class="tab" id="tab-visitas">
+        <div class="page-head"><div><h1>Visitas y capturas</h1><p>Consulta entradas, salidas y el levantamiento asociado.</p></div></div>
+        <div class="filters">
+          <div class="filter"><label>Desde</label><input type="date" id="vis-desde"></div>
+          <div class="filter"><label>Hasta</label><input type="date" id="vis-hasta"></div>
+          <div class="filter"><label>Región</label><select id="vis-region"><option value="">Todas</option><option value="OCCIDENTE">Occidente</option><option value="NORTE">Norte</option></select></div>
+          <div class="filter"><label>Ruta</label><select id="vis-ruta"><option value="">Todas</option></select></div>
+          <div class="filter"><label>Promotor</label><select id="vis-promotor"><option value="">Todos</option></select></div>
+          <div class="filter"><label>Estado</label><select id="vis-estado"><option value="">Todos</option><option value="COMPLETADA">Completada</option><option value="EN_VISITA">En curso</option></select></div>
+          <button class="btn btn-primary" onclick="loadVisitasPeriodo()">Consultar</button>
+        </div>
+        <div class="table-wrap">
+          <div class="table-title">Registros <small id="vis-count">0 resultados</small></div>
+          <table><thead><tr><th>Fecha</th><th>Entrada</th><th>Salida</th><th>Promotor</th><th>Región</th><th>Ruta</th><th>Tienda</th><th>Duración</th><th>Distancia</th><th>Estado</th><th></th></tr></thead><tbody id="tabla-visitas"></tbody></table>
+        </div>
+      </section>
+
+      <section class="tab" id="tab-promotores">
+        <div class="page-head">
+          <div><h1>Promotores</h1><p>El perfil operativo y el usuario de Supabase Auth deben estar vinculados.</p></div>
+          <div class="actions"><button class="btn btn-primary" onclick="showPromotorModal()">+ Nuevo perfil</button></div>
+        </div>
+        <div class="filters"><div class="filter" style="flex:1;max-width:380px"><label>Buscar</label><input type="text" id="prom-search" placeholder="Nombre, empleado o ruta" oninput="renderPromotores()"></div></div>
+        <div class="table-wrap"><table><thead><tr><th>Nombre</th><th>No. empleado</th><th>Zona</th><th>Región</th><th>Ruta</th><th>Rol</th><th>Auth</th><th>Estado</th><th>Acciones</th></tr></thead><tbody id="tabla-promotores"></tbody></table></div>
+      </section>
+
+      <section class="tab" id="tab-tiendas">
+        <div class="page-head">
+          <div><h1>Tiendas</h1><p>Catálogo utilizado para filtrar las sucursales por ruta y validar el GPS.</p></div>
+          <div class="actions"><button class="btn btn-outline" onclick="document.getElementById('input-excel').click()">Importar Excel</button><input id="input-excel" type="file" accept=".xlsx,.xls,.xlsm" style="display:none" onchange="importarExcel(this)"></div>
+        </div>
+        <div class="filters"><div class="filter" style="flex:1;max-width:380px"><label>Buscar</label><input type="text" id="tienda-search" placeholder="Nombre, ID, ruta o ciudad" oninput="renderTiendas()"></div><div class="filter"><label>Ruta</label><select id="tienda-ruta" onchange="renderTiendas()"><option value="">Todas</option></select></div></div>
+        <div class="table-wrap"><div class="table-title">Catálogo <small id="tienda-count">—</small></div><table><thead><tr><th>ID</th><th>ID tienda</th><th>Cadena</th><th>Nombre</th><th>Ciudad</th><th>Estado</th><th>Zona</th><th>Ruta</th><th>Lat</th><th>Lng</th><th>Activa</th></tr></thead><tbody id="tabla-tiendas"></tbody></table></div>
+      </section>
+
+      <section class="tab" id="tab-exportar">
+        <div class="page-head"><div><h1>Exportar</h1><p>Genera el levantamiento en formato compatible con la estructura BDD que utilizabas con Google Forms.</p></div></div>
+        <div class="export-card">
+          <h3>Reporte de levantamientos</h3>
+          <p>Incluye una hoja con las 33 columnas del formulario original, además de visitas, cumplimiento por promotor y resumen por región.</p>
+          <div class="filters" style="border:0;padding:0;margin:0 0 12px">
+            <div class="filter"><label>Desde</label><input type="date" id="exp-desde"></div>
+            <div class="filter"><label>Hasta</label><input type="date" id="exp-hasta"></div>
+          </div>
+          <button class="btn btn-primary" id="btn-export" onclick="exportarDatos()">Exportar Excel</button>
+        </div>
+        <div class="export-card">
+          <h3>Qué considera el cumplimiento</h3>
+          <p>Una captura cuenta únicamente cuando el promotor envía todas las respuestas y la RPC segura registra la salida. Una visita que permanece abierta no se suma al cumplimiento. La meta usada por este panel es de <strong>6 capturas por promotor operativo activo al día</strong>.</p>
+        </div>
+      </section>
+    </main>
   </div>
+</div>
 
-  <div class="main-wrap">
-
-    <div class="sidebar">
-      <div class="sidebar-header">
-        <div class="sidebar-title">Promotores</div>
-        <div class="sidebar-search"><input type="text" placeholder="Buscar..." oninput="filterProms(this.value)"></div>
-      </div>
-      <div class="promotor-list" id="prom-list"></div>
-    </div>
-
-    <div class="content">
-
-      <div class="tab-content active" id="tab-mapa">
-        <div class="stats-bar">
-          <div class="stat-item"><div class="stat-num green" id="st-activos">0</div><div class="stat-label">Check-in hoy</div></div>
-          <div class="stat-item"><div class="stat-num" id="st-gps">0</div><div class="stat-label">Registros GPS hoy</div></div>
-          <div class="stat-item"><div class="stat-num amber" id="st-sin-checkin">0</div><div class="stat-label">Sin check-in hoy</div></div>
-          <div class="stat-item"><div class="stat-num" id="st-total">22</div><div class="stat-label">Promotores activos</div></div>
-        </div>
-        <div id="map"></div>
-      </div>
-
-      <div class="tab-content" id="tab-promotores">
-        <div class="tab-pad">
-          <div class="section-title">
-            Plantilla activa
-            <button class="btn btn-sm btn-success" onclick="showModalPromotor()">+ Nuevo promotor</button>
-          </div>
-          <div class="table-wrap">
-            <table>
-              <thead><tr><th>Nombre</th><th>No. Empleado</th><th>Región</th><th>Ruta</th><th>Estado hoy</th><th>Acciones</th></tr></thead>
-              <tbody id="tabla-promotores"></tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-
-      <div class="tab-content" id="tab-tiendas">
-        <div class="tab-pad">
-          <div class="section-title">
-            Catálogo de tiendas
-            <button class="btn btn-sm btn-outline" onclick="document.getElementById('input-excel').click()">Importar Excel</button>
-            <input type="file" id="input-excel" accept=".xlsx,.xls" style="display:none" onchange="importarExcel(this)">
-          </div>
-          <div class="table-wrap">
-            <table>
-              <thead><tr><th>ID</th><th>ID Tienda</th><th>Cadena</th><th>Nombre Tienda</th><th>Dirección</th><th>Lat</th><th>Lng</th><th>Ciudad</th><th>Estado</th><th>Zona</th><th>Ruta</th><th>Activa</th></tr></thead>
-              <tbody id="tabla-tiendas"></tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-
-      <div class="tab-content" id="tab-exportar">
-        <div class="tab-pad">
-          <div class="export-card">
-            <h3>Exportar registros de asistencia y GPS</h3>
-            <p>Descarga todos los registros del periodo en formato Excel (.xlsx) listo para conciliación con el cliente. Incluye timestamps de servidor y coordenadas de cada check-in y posición GPS.</p>
-            <div class="export-actions" style="display:flex; gap:12px; align-items:flex-end; flex-wrap:wrap; margin-bottom:12px;">
-              <div>
-                <label style="display:block; font-size:12px; color:var(--gray-400); margin-bottom:4px;">Desde</label>
-                <input type="date" id="export-fecha-desde" style="padding:8px; border:1px solid #ddd; border-radius:6px;">
-              </div>
-              <div>
-                <label style="display:block; font-size:12px; color:var(--gray-400); margin-bottom:4px;">Hasta</label>
-                <input type="date" id="export-fecha-hasta" style="padding:8px; border:1px solid #ddd; border-radius:6px;">
-              </div>
-            </div>
-            <div class="export-actions">
-              <button class="btn btn-success" onclick="exportarDatos()">Exportar rango seleccionado</button>
-            </div>
-          </div>
-          <div class="export-card" style="border-color: #f5c4b3;">
-            <h3 style="color:var(--danger)">Limpieza quincenal — proceso manual en Supabase</h3>
-            <p>Por seguridad, el borrado de registros <strong>no se puede hacer desde este panel</strong>. Esto protege la evidencia: nadie puede eliminar datos desde la app pública, ni siquiera con la contraseña de admin de esta página. Solo se puede borrar entrando directamente a tu cuenta de Supabase.</p>
-            <ol class="step-list">
-              <li>1. Exporta primero con el botón de arriba y confirma que el archivo se descargó bien</li>
-              <li>2. Entra a <code>supabase.com</code> → tu proyecto <code>JX_HYDROLIT</code></li>
-              <li>3. Ve a <strong>Table Editor</strong> → abre <code>checkins</code> o <code>gps_logs</code></li>
-              <li>4. Filtra por fecha si quieres revisar el rango exacto de la quincena</li>
-              <li>5. Selecciona las filas con el checkbox de la izquierda</li>
-              <li>6. Clic en <strong>Delete rows</strong> (botón rojo) y confirma</li>
-            </ol>
-          </div>
-        </div>
-      </div>
-
-    </div>
+<div class="modal-bg" id="modal-detalle">
+  <div class="modal">
+    <div class="modal-head"><h2>Detalle de visita</h2><button class="modal-close" onclick="closeModal('modal-detalle')">×</button></div>
+    <div class="modal-body" id="detalle-body"></div>
   </div>
 </div>
 
 <div class="modal-bg" id="modal-promotor">
-  <div class="modal">
-    <h2 id="mp-titulo">Nuevo promotor</h2>
-    <input type="hidden" id="mp-id">
-    <div class="modal-label">Nombre completo</div>
-    <input type="text" id="mp-nombre" placeholder="Nombre del promotor">
-    <div class="modal-label">Número de empleado</div>
-    <input type="text" id="mp-codigo" placeholder="Ej: 1023">
-    <div class="modal-label">Región</div>
-    <input type="text" id="mp-region" placeholder="Ej: Querétaro Centro">
-    <div class="modal-label">Zona</div>
-    <select id="mp-zona">
-      <option value="">— Selecciona zona —</option>
-      <option value="NORTE">NORTE</option>
-      <option value="OCCIDENTE">OCCIDENTE</option>
-    </select>
-    <div class="modal-label">Ruta (opcional para supervisores)</div>
-    <input type="text" id="mp-ruta" placeholder="Ej: NTE-01">
-    <div class="modal-label">Rol</div>
-    <select id="mp-rol">
-      <option value="promotor">Promotor</option>
-      <option value="supervisor">Supervisor</option>
-    </select>
-    <div class="modal-footer">
-      <button class="btn btn-outline" onclick="closeModal('modal-promotor')">Cancelar</button>
-      <button class="btn btn-success" onclick="guardarPromotor()">Guardar</button>
+  <div class="modal modal-sm">
+    <div class="modal-head"><h2 id="mp-title">Editar promotor</h2><button class="modal-close" onclick="closeModal('modal-promotor')">×</button></div>
+    <div class="modal-body">
+      <div class="help" id="mp-help">Crear este perfil no crea automáticamente el usuario de Authentication. Después deberás crear el usuario Auth y vincular su UUID a <span class="mono">auth_user_id</span>.</div>
+      <input type="hidden" id="mp-id">
+      <div class="form-grid">
+        <div class="field full"><label>Nombre completo</label><input type="text" id="mp-nombre"></div>
+        <div class="field"><label>Número de empleado</label><input type="text" id="mp-numero"></div>
+        <div class="field"><label>Rol</label><select id="mp-rol"><option value="promotor">Promotor</option><option value="supervisor">Supervisor</option></select></div>
+        <div class="field"><label>Zona</label><select id="mp-zona"><option value="">—</option><option value="OCCIDENTE">OCCIDENTE</option><option value="NORTE">NORTE</option></select></div>
+        <div class="field"><label>Región</label><input type="text" id="mp-region"></div>
+        <div class="field full"><label>Ruta</label><input type="text" id="mp-ruta"></div>
+      </div>
     </div>
+    <div class="modal-footer"><button class="btn btn-outline" onclick="closeModal('modal-promotor')">Cancelar</button><button class="btn btn-primary" onclick="guardarPromotor()">Guardar</button></div>
   </div>
 </div>
 
-<div class="toast-admin" id="toast-admin"></div>
+<div class="toast" id="toast"></div>
 
 <script>
-const SUPABASE_URL = 'https://cdswrgjxrltobsdwytzl.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNkc3dyZ2p4cmx0b2JzZHd5dHpsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExMjA2OTUsImV4cCI6MjA5NjY5NjY5NX0.EN1xP-Ku1x3LLNyNZjfzjq5N6yFmBnUFKwsd8_oPzrE';
+const SUPABASE_URL='https://cdswrgjxrltobsdwytzl.supabase.co';
+const SUPABASE_ANON_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNkc3dyZ2p4cmx0b2JzZHd5dHpsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExMjA2OTUsImV4cCI6MjA5NjY5NjY5NX0.EN1xP-Ku1x3LLNyNZjfzjq5N6yFmBnUFKwsd8_oPzrE';
+const META_DIARIA=6;
+const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
 
-const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+let db={promotores:[],tiendas:[],dashVisitas:[],dashLevantamientos:[],visitas:[],levantamientos:[]};
+let refreshTimer=null;
 
-let map, markers = {};
-let db = { promotores: [], tiendas: [], checkins: [], gps: [], visitas: [] };
+function escapeHtml(v){return String(v??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]))}
+function fmtDate(iso){return iso?new Date(iso).toLocaleDateString('es-MX'):'—'}
+function fmtTime(iso){return iso?new Date(iso).toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'}):'—'}
+function fmtDateTime(iso){return iso?new Date(iso).toLocaleString('es-MX',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}):'—'}
+function yn(v){return v===true?'Sí':v===false?'No':'—'}
+function pct(n,d){return d?Math.round((n/d)*1000)/10:0}
+function todayLocal(){const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`}
+function dateBounds(desde,hasta){const a=new Date(`${desde}T00:00:00`);const b=new Date(`${hasta}T00:00:00`);b.setDate(b.getDate()+1);return {start:a.toISOString(),end:b.toISOString()}}
+function normalizedZone(p){const z=(p?.zona||'').trim().toUpperCase();if(z)return z;const r=(p?.ruta||'').toUpperCase();if(r.startsWith('OCC'))return 'OCCIDENTE';if(r.startsWith('NTE')||r.startsWith('NOR'))return 'NORTE';return (p?.region||'SIN REGIÓN').trim().toUpperCase()||'SIN REGIÓN'}
+function isOperativePromotor(p){return p?.activo===true&&(p.rol||'promotor').toLowerCase()!=='supervisor'}
+function showToast(msg,dur=3000){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),dur)}
+function openModal(id){document.getElementById(id).classList.add('show')}
+function closeModal(id){document.getElementById(id).classList.remove('show')}
 
-// ============================================================
-//  LOGIN — vía Supabase Auth (ya no hay password en el código)
-// ============================================================
-async function doLogin() {
-  const email = document.getElementById('login-user').value.trim();
-  const pass = document.getElementById('login-pass').value;
-  const btn = document.querySelector('#login-overlay .btn-primary');
-  btn.disabled = true;
-  document.getElementById('login-err').style.display = 'none';
-
-  const { data, error } = await sb.auth.signInWithPassword({ email, password: pass });
-
-  btn.disabled = false;
-
-  if (error || !data.session) {
-    document.getElementById('login-err').textContent = 'Credenciales incorrectas.';
-    document.getElementById('login-err').style.display = 'block';
-    return;
+async function fetchAll(table,builder,pageSize=1000){
+  let out=[],from=0;
+  while(true){
+    let q=sb.from(table).select('*');
+    if(builder)q=builder(q);
+    const {data,error}=await q.range(from,from+pageSize-1);
+    if(error)throw error;
+    out.push(...(data||[]));
+    if(!data||data.length<pageSize)break;
+    from+=pageSize;
+    if(from>100000)throw new Error('Consulta demasiado grande. Reduce el rango.');
   }
-
-  document.getElementById('login-overlay').style.display = 'none';
-  document.getElementById('app').style.display = 'flex';
-  initApp();
+  return out;
 }
-document.getElementById('login-pass').addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
 
-// Si ya hay una sesión activa (recargaste la página), entra directo sin pedir login de nuevo
-window.addEventListener('load', async () => {
-  const { data: { session } } = await sb.auth.getSession();
-  if (session) {
-    document.getElementById('login-overlay').style.display = 'none';
-    document.getElementById('app').style.display = 'flex';
-    initApp();
-  }
+async function requireAdmin(){
+  const {data,error}=await sb.rpc('is_admin');
+  if(error)throw error;
+  return data===true;
+}
+
+async function doLogin(){
+  const email=document.getElementById('login-user').value.trim();
+  const password=document.getElementById('login-pass').value;
+  const btn=document.getElementById('btn-login');const err=document.getElementById('login-err');
+  err.style.display='none';btn.disabled=true;btn.textContent='Verificando...';
+  try{
+    const {data,error}=await sb.auth.signInWithPassword({email,password});
+    if(error||!data.session)throw new Error('Credenciales incorrectas.');
+    if(!(await requireAdmin())){await sb.auth.signOut();throw new Error('Tu usuario está autenticado, pero no está autorizado como administrador.');}
+    await enterApp(data.session);
+  }catch(e){err.textContent=e.message||'No se pudo iniciar sesión.';err.style.display='block'}
+  finally{btn.disabled=false;btn.textContent='Entrar'}
+}
+
+document.getElementById('login-pass').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin()});
+
+async function enterApp(session){
+  document.getElementById('login-overlay').style.display='none';document.getElementById('app').style.display='block';
+  document.getElementById('admin-email').textContent=session?.user?.email||'Administrador';
+  const hoy=todayLocal();['dash-fecha','vis-desde','vis-hasta','exp-desde','exp-hasta'].forEach(id=>document.getElementById(id).value=hoy);
+  await loadCatalogos();
+  await loadDashboard();
+  await loadVisitasPeriodo();
+  refreshTimer=setInterval(()=>{if(document.getElementById('tab-dashboard').classList.contains('active'))loadDashboard(false)},60000);
+}
+
+async function doLogout(){if(refreshTimer)clearInterval(refreshTimer);await sb.auth.signOut();location.reload()}
+
+async function loadCatalogos(){
+  try{
+    const [prom,tiendas]=await Promise.all([
+      fetchAll('promotor',q=>q.order('nombre_completo',{ascending:true})),
+      fetchAll('tiendas',q=>q.order('nombre_tienda',{ascending:true}))
+    ]);
+    db.promotores=prom;db.tiendas=tiendas;
+    fillSelectors();renderPromotores();renderTiendas();
+  }catch(e){console.error(e);showToast('No se pudieron cargar los catálogos.',4500)}
+}
+
+function fillSelectors(){
+  const rutas=[...new Set(db.tiendas.map(t=>(t.ruta||'').trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b));
+  const options='<option value="">Todas</option>'+rutas.map(r=>`<option value="${escapeHtml(r)}">${escapeHtml(r)}</option>`).join('');
+  document.getElementById('vis-ruta').innerHTML=options;document.getElementById('tienda-ruta').innerHTML=options;
+  document.getElementById('vis-promotor').innerHTML='<option value="">Todos</option>'+db.promotores.filter(p=>p.activo).map(p=>`<option value="${escapeHtml(p.numero_empleado)}">${escapeHtml(p.nombre_completo)} · ${escapeHtml(p.numero_empleado)}</option>`).join('');
+}
+
+async function loadDashboard(showMsg=true){
+  const fecha=document.getElementById('dash-fecha').value||todayLocal();const {start,end}=dateBounds(fecha,fecha);
+  try{
+    const [vis,lev]=await Promise.all([
+      fetchAll('visitas',q=>q.gte('hora_inicio',start).lt('hora_inicio',end).order('hora_inicio',{ascending:false})),
+      fetchAll('levantamientos',q=>q.gte('marca_temporal',start).lt('marca_temporal',end).order('marca_temporal',{ascending:false}))
+    ]);
+    db.dashVisitas=vis;db.dashLevantamientos=lev;renderDashboard();
+    document.getElementById('refresh-info').textContent='Actualizado '+new Date().toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'});
+    if(showMsg)showToast('Resumen actualizado.');
+  }catch(e){console.error(e);showToast('Error al cargar el resumen.',4500)}
+}
+
+function renderDashboard(){
+  const ops=db.promotores.filter(isOperativePromotor);const lev=db.dashLevantamientos;const vis=db.dashVisitas;
+  const meta=ops.length*META_DIARIA;const cump=pct(lev.length,meta);const abiertas=vis.filter(v=>!v.hora_fin||v.estado==='EN_VISITA').length;
+  const byProm={};lev.forEach(l=>{byProm[l.codigo_promotor]=(byProm[l.codigo_promotor]||0)+1});
+  const sin=ops.filter(p=>(byProm[p.numero_empleado]||0)===0).length;
+  document.getElementById('st-capturas').textContent=lev.length;document.getElementById('st-meta').textContent=meta;document.getElementById('st-cumplimiento').textContent=cump.toFixed(1)+'%';document.getElementById('st-cumplimiento').className='stat-value '+(cump>=90?'green':cump>=60?'amber':'red');document.getElementById('st-abiertas').textContent=abiertas;document.getElementById('st-sin-captura').textContent=sin;
+
+  const regions={};ops.forEach(p=>{const z=normalizedZone(p);if(!regions[z])regions[z]={prom:0,capt:0};regions[z].prom++});
+  lev.forEach(l=>{const p=db.promotores.find(x=>x.numero_empleado===l.codigo_promotor);const z=p?normalizedZone(p):(l.region||'SIN REGIÓN').toUpperCase();if(!regions[z])regions[z]={prom:0,capt:0};regions[z].capt++});
+  const entries=Object.entries(regions).sort((a,b)=>a[0].localeCompare(b[0]));
+  document.getElementById('region-progress').innerHTML=entries.length?entries.map(([z,r])=>{const m=r.prom*META_DIARIA,pc=pct(r.capt,m);return `<div class="region-row"><div class="region-name">${escapeHtml(z)}</div><div><div class="progress"><span style="width:${Math.min(100,pc)}%"></span></div><div class="muted" style="font-size:10px;margin-top:4px">${r.capt} de ${m} capturas · ${r.prom} promotores</div></div><div class="region-pct">${pc.toFixed(1)}%</div></div>`}).join(''):'<div class="empty">Sin promotores operativos.</div>';
+  document.getElementById('region-sub').textContent=`${ops.length} promotores operativos`;
+
+  const completadas=vis.filter(v=>v.hora_fin);const durs=completadas.map(v=>Number(v.duracion_min)).filter(Number.isFinite);const avg=durs.length?durs.reduce((a,b)=>a+b,0)/durs.length:null;const cumple40=completadas.filter(v=>Number(v.duracion_min)>=40).length;const zeros=lev.filter(l=>l.confirmado_todo_cero===true).length;const dists=vis.map(v=>Number(v.distancia_entrada_m)).filter(Number.isFinite);const avgDist=dists.length?dists.reduce((a,b)=>a+b,0)/dists.length:null;
+  document.getElementById('m-duracion').textContent=avg===null?'—':`${avg.toFixed(1)} min`;
+  document.getElementById('m-40').textContent=completadas.length?`${cumple40} / ${completadas.length} (${pct(cumple40,completadas.length).toFixed(1)}%)`:'—';
+  document.getElementById('m-cero').textContent=zeros;
+  document.getElementById('m-distancia').textContent=avgDist===null?'—':`${Math.round(avgDist)} m`;
+
+  document.getElementById('prom-cump-sub').textContent=`${ops.length} promotores · meta ${META_DIARIA} c/u`;
+  document.getElementById('tabla-cumplimiento').innerHTML=ops.map(p=>{
+    const c=byProm[p.numero_empleado]||0,pc=pct(c,META_DIARIA);const plev=lev.filter(l=>l.codigo_promotor===p.numero_empleado).sort((a,b)=>new Date(b.marca_temporal)-new Date(a.marca_temporal))[0];const open=vis.some(v=>v.codigo_promotor===p.numero_empleado&&!v.hora_fin);let estado=open?'<span class="badge badge-amber">En visita</span>':c>=META_DIARIA?'<span class="badge badge-green">Meta cumplida</span>':c>0?'<span class="badge badge-gray">En avance</span>':'<span class="badge badge-red">Sin captura</span>';
+    return `<tr><td><b>${escapeHtml(p.nombre_completo)}</b></td><td class="mono">${escapeHtml(p.numero_empleado)}</td><td>${escapeHtml(normalizedZone(p))}</td><td>${escapeHtml(p.ruta||'—')}</td><td><b>${c}</b></td><td>${META_DIARIA}</td><td><b class="${pc>=100?'green':pc<50?'red':''}">${pc.toFixed(1)}%</b></td><td>${estado}</td><td>${plev?fmtTime(plev.marca_temporal):'—'}</td></tr>`
+  }).join('')||'<tr><td colspan="9" class="empty">Sin promotores operativos.</td></tr>';
+
+  const visitMap=new Map(vis.map(v=>[Number(v.id),v]));
+  document.getElementById('tabla-recientes').innerHTML=lev.slice(0,15).map(l=>{const v=visitMap.get(Number(l.visita_id));return `<tr><td>${fmtTime(l.marca_temporal)}</td><td><b>${escapeHtml(l.nombre_promotor)}</b><div class="muted mono">${escapeHtml(l.codigo_promotor)}</div></td><td>${escapeHtml(l.ruta||v?.ruta||'—')}</td><td>${escapeHtml(l.nombre_tienda)}</td><td>${v?.duracion_min!=null?escapeHtml(v.duracion_min)+' min':'—'}</td><td>${v?.distancia_entrada_m!=null?Math.round(Number(v.distancia_entrada_m))+' m':'—'}</td><td>${l.confirmado_todo_cero?'<span class="badge badge-amber">Sí</span>':'<span class="badge badge-gray">No</span>'}</td><td><button class="btn btn-outline btn-sm" onclick="showDetalle(${Number(v?.id||l.visita_id)})">Ver</button></td></tr>`}).join('')||'<tr><td colspan="8" class="empty">Todavía no hay capturas para esta fecha.</td></tr>';
+}
+
+async function loadVisitasPeriodo(){
+  const desde=document.getElementById('vis-desde').value||todayLocal(),hasta=document.getElementById('vis-hasta').value||desde;const {start,end}=dateBounds(desde,hasta);
+  try{
+    const [vis,lev]=await Promise.all([
+      fetchAll('visitas',q=>q.gte('hora_inicio',start).lt('hora_inicio',end).order('hora_inicio',{ascending:false})),
+      fetchAll('levantamientos',q=>q.gte('marca_temporal',start).lt('marca_temporal',end).order('marca_temporal',{ascending:false}))
+    ]);
+    db.visitas=vis;db.levantamientos=lev;renderVisitas();
+  }catch(e){console.error(e);showToast('No se pudieron cargar las visitas.',4500)}
+}
+
+function renderVisitas(){
+  const region=document.getElementById('vis-region').value,ruta=document.getElementById('vis-ruta').value,prom=document.getElementById('vis-promotor').value,estado=document.getElementById('vis-estado').value;
+  const promMap=new Map(db.promotores.map(p=>[p.numero_empleado,p]));
+  const rows=db.visitas.filter(v=>{
+    const p=promMap.get(v.codigo_promotor);const z=p?normalizedZone(p):(v.region||'').toUpperCase();const st=v.hora_fin?'COMPLETADA':'EN_VISITA';
+    return (!region||z===region)&&(!ruta||v.ruta===ruta)&&(!prom||v.codigo_promotor===prom)&&(!estado||st===estado);
+  });
+  document.getElementById('vis-count').textContent=`${rows.length} resultado${rows.length===1?'':'s'}`;
+  document.getElementById('tabla-visitas').innerHTML=rows.map(v=>{const p=promMap.get(v.codigo_promotor);const st=v.hora_fin?'COMPLETADA':'EN_VISITA';return `<tr><td>${fmtDate(v.hora_inicio)}</td><td>${fmtTime(v.hora_inicio)}</td><td>${fmtTime(v.hora_fin)}</td><td><b>${escapeHtml(v.nombre_promotor)}</b><div class="muted mono">${escapeHtml(v.codigo_promotor)}</div></td><td>${escapeHtml(p?normalizedZone(p):(v.region||'—'))}</td><td>${escapeHtml(v.ruta||'—')}</td><td>${escapeHtml(v.nombre_tienda)}<div class="muted mono">${escapeHtml(v.id_tienda||'')}</div></td><td>${v.duracion_min!=null?escapeHtml(v.duracion_min)+' min':'—'}</td><td>${v.distancia_entrada_m!=null?Math.round(Number(v.distancia_entrada_m))+' m':'—'}</td><td>${st==='COMPLETADA'?'<span class="badge badge-green">Completada</span>':'<span class="badge badge-amber">En curso</span>'}</td><td><button class="btn btn-outline btn-sm" onclick="showDetalle(${Number(v.id)})">Ver</button></td></tr>`}).join('')||'<tr><td colspan="11" class="empty">No hay visitas con esos filtros.</td></tr>';
+}
+['vis-region','vis-ruta','vis-promotor','vis-estado'].forEach(id=>document.getElementById(id).addEventListener('change',renderVisitas));
+
+function findLevantamiento(visitaId){return [...db.levantamientos,...db.dashLevantamientos].find(l=>Number(l.visita_id)===Number(visitaId))}
+function findVisita(visitaId){return [...db.visitas,...db.dashVisitas].find(v=>Number(v.id)===Number(visitaId))}
+function showDetalle(id){
+  const v=findVisita(id);if(!v){showToast('No se encontró la visita.');return}const l=findLevantamiento(id);
+  const general=`<div class="detail-grid"><div class="detail-box"><div class="detail-label">Promotor</div><div class="detail-value">${escapeHtml(v.nombre_promotor)} · ${escapeHtml(v.codigo_promotor)}</div></div><div class="detail-box"><div class="detail-label">Tienda</div><div class="detail-value">${escapeHtml(v.nombre_tienda)} · ID ${escapeHtml(v.id_tienda)}</div></div><div class="detail-box"><div class="detail-label">Entrada / salida</div><div class="detail-value">${fmtDateTime(v.hora_inicio)} → ${fmtDateTime(v.hora_fin)}</div></div><div class="detail-box"><div class="detail-label">Duración</div><div class="detail-value">${v.duracion_min!=null?escapeHtml(v.duracion_min)+' min':'Visita abierta'}</div></div><div class="detail-box"><div class="detail-label">Ruta / región</div><div class="detail-value">${escapeHtml(v.ruta||'—')} · ${escapeHtml(v.region||'—')}</div></div><div class="detail-box"><div class="detail-label">GPS de entrada</div><div class="detail-value">Distancia ${v.distancia_entrada_m!=null?Math.round(Number(v.distancia_entrada_m))+' m':'—'} · Precisión ${v.precision_entrada_m!=null?Math.round(Number(v.precision_entrada_m))+' m':'—'}</div></div></div>`;
+  if(!l){document.getElementById('detalle-body').innerHTML=general+'<div class="help" style="margin-top:16px">Esta visita aún no tiene levantamiento asociado. Si está en curso, el promotor debe completar el formulario para registrar la salida.</div>';openModal('modal-detalle');return}
+  const inv=(label,val)=>`<div class="inv"><b>${escapeHtml(label)}</b><span>${escapeHtml(val)}</span></div>`;
+  document.getElementById('detalle-body').innerHTML=general+
+    `<div class="section-label">Hydrolit</div><div class="inventory-grid">${inv('Manzana',l.inventario_hydrolit_manzana)}${inv('Uva',l.inventario_hydrolit_uva)}${inv('Coco',l.inventario_hydrolit_coco)}${inv('Naranja-Mandarina',l.inventario_hydrolit_naranja_mandarina)}${inv('Fresa',l.inventario_hydrolit_fresa)}${inv('Anaquel',yn(l.hydrolit_anaquel)+' · '+l.hydrolit_frentes_anaquel+' frentes')}${inv('Cabecera',yn(l.hydrolit_cabecera))}${inv('Refrigerador',yn(l.hydrolit_refrigerador)+' · '+l.hydrolit_frentes_refrigerador+' frentes')}${inv('Exhibición adicional',yn(l.hydrolit_exhibicion_adicional)+' · '+l.hydrolit_cantidad_exhibiciones)}</div>`+
+    `<div class="section-label">XOT</div><div class="inventory-grid">${inv('Inventario',l.inventario_xot)}${inv('Frentes refrigerador',l.xot_frentes_refrigerador)}${inv('Candado',yn(l.xot_candado))}${inv('Exhibición adicional',yn(l.xot_exhibicion_adicional)+' · '+l.xot_cantidad_exhibiciones)}</div>`+
+    `<div class="section-label">Blist</div><div class="inventory-grid">${inv('Uva',l.inventario_blist_uva)}${inv('Limonada rosa',l.inventario_blist_limonada_rosa)}${inv('Anaquel',yn(l.blist_anaquel)+' · '+l.blist_frentes_anaquel+' frentes')}${inv('Refrigerador',yn(l.blist_refrigerador)+' · '+l.blist_frentes_refrigerador+' frentes')}${inv('Exhibición adicional',yn(l.blist_exhibicion_adicional)+' · '+l.blist_cantidad_exhibiciones)}</div>`+
+    (l.confirmado_todo_cero?`<div class="help" style="margin-top:16px"><b>Captura todo en cero confirmada.</b><br>${escapeHtml(l.motivo_todo_cero||'Sin motivo')}</div>`:'');
+  openModal('modal-detalle');
+}
+
+function renderPromotores(){
+  const q=(document.getElementById('prom-search').value||'').trim().toLowerCase();const rows=db.promotores.filter(p=>!q||[p.nombre_completo,p.numero_empleado,p.ruta,p.region,p.zona].some(v=>String(v||'').toLowerCase().includes(q)));
+  document.getElementById('tabla-promotores').innerHTML=rows.map(p=>`<tr><td><b>${escapeHtml(p.nombre_completo)}</b></td><td class="mono">${escapeHtml(p.numero_empleado)}</td><td>${escapeHtml(p.zona||'—')}</td><td>${escapeHtml(p.region||'—')}</td><td>${escapeHtml(p.ruta||'—')}</td><td>${escapeHtml(p.rol||'promotor')}</td><td>${p.auth_user_id?'<span class="badge badge-green">Vinculado</span>':'<span class="badge badge-red">Pendiente</span>'}</td><td>${p.activo?'<span class="badge badge-green">Activo</span>':'<span class="badge badge-gray">Baja</span>'}</td><td class="nowrap"><button class="btn btn-outline btn-sm" onclick="editarPromotor(${Number(p.id)})">Editar</button> <button class="btn ${p.activo?'btn-amber':'btn-primary'} btn-sm" onclick="togglePromotor(${Number(p.id)},${!p.activo})">${p.activo?'Dar baja':'Reactivar'}</button></td></tr>`).join('')||'<tr><td colspan="9" class="empty">Sin resultados.</td></tr>';
+}
+function showPromotorModal(){document.getElementById('mp-title').textContent='Nuevo perfil de promotor';document.getElementById('mp-help').classList.remove('hidden');['mp-id','mp-nombre','mp-numero','mp-region','mp-ruta'].forEach(id=>document.getElementById(id).value='');document.getElementById('mp-zona').value='';document.getElementById('mp-rol').value='promotor';openModal('modal-promotor')}
+function editarPromotor(id){const p=db.promotores.find(x=>Number(x.id)===Number(id));if(!p)return;document.getElementById('mp-title').textContent='Editar promotor';document.getElementById('mp-help').classList.add('hidden');document.getElementById('mp-id').value=p.id;document.getElementById('mp-nombre').value=p.nombre_completo||'';document.getElementById('mp-numero').value=p.numero_empleado||'';document.getElementById('mp-zona').value=p.zona||'';document.getElementById('mp-region').value=p.region||'';document.getElementById('mp-ruta').value=p.ruta||'';document.getElementById('mp-rol').value=p.rol||'promotor';openModal('modal-promotor')}
+async function guardarPromotor(){
+  const id=document.getElementById('mp-id').value,nombre_completo=document.getElementById('mp-nombre').value.trim(),numero_empleado=document.getElementById('mp-numero').value.trim(),zona=document.getElementById('mp-zona').value,region=document.getElementById('mp-region').value.trim(),ruta=document.getElementById('mp-ruta').value.trim(),rol=document.getElementById('mp-rol').value;
+  if(!nombre_completo||!numero_empleado){showToast('Nombre y número de empleado son obligatorios.');return}
+  try{let error;if(id)({error}=await sb.from('promotor').update({nombre_completo,numero_empleado,zona,region,ruta,rol}).eq('id',id));else({error}=await sb.from('promotor').insert({nombre_completo,numero_empleado,zona,region,ruta,rol,activo:true}));if(error)throw error;closeModal('modal-promotor');await loadCatalogos();await loadDashboard(false);showToast(id?'Promotor actualizado.':'Perfil creado. Falta crear/vincular su usuario Auth.',5000)}catch(e){console.error(e);showToast('No se pudo guardar: '+(e.message||'error'),5000)}
+}
+async function togglePromotor(id,activo){const p=db.promotores.find(x=>Number(x.id)===Number(id));if(!p)return;if(!confirm(`${activo?'¿Reactivar':'¿Dar de baja'} a ${p.nombre_completo}?`))return;try{const {error}=await sb.from('promotor').update({activo}).eq('id',id);if(error)throw error;await loadCatalogos();await loadDashboard(false);showToast(activo?'Promotor reactivado.':'Promotor dado de baja.')}catch(e){showToast('No se pudo actualizar.',4500)}}
+
+function renderTiendas(){
+  const q=(document.getElementById('tienda-search').value||'').trim().toLowerCase(),ruta=document.getElementById('tienda-ruta').value;const rows=db.tiendas.filter(t=>(!ruta||t.ruta===ruta)&&(!q||[t.id_tienda,t.nombre_tienda,t.cadena,t.ruta,t.ciudad,t.estado].some(v=>String(v||'').toLowerCase().includes(q))));
+  document.getElementById('tienda-count').textContent=`${rows.length} de ${db.tiendas.length}`;
+  document.getElementById('tabla-tiendas').innerHTML=rows.slice(0,500).map(t=>`<tr><td class="mono">${escapeHtml(t.id)}</td><td class="mono">${escapeHtml(t.id_tienda||'—')}</td><td>${escapeHtml(t.cadena||'—')}</td><td><b>${escapeHtml(t.nombre_tienda||'—')}</b></td><td>${escapeHtml(t.ciudad||'—')}</td><td>${escapeHtml(t.estado||'—')}</td><td>${escapeHtml(t.zona||'—')}</td><td>${escapeHtml(t.ruta||'—')}</td><td class="mono">${escapeHtml(t.lat??'—')}</td><td class="mono">${escapeHtml(t.lng??'—')}</td><td>${t.activa?'<span class="badge badge-green">Sí</span>':'<span class="badge badge-gray">No</span>'}</td></tr>`).join('')+(rows.length>500?`<tr><td colspan="11" class="empty">Se muestran 500 resultados. Usa los filtros para reducir la búsqueda.</td></tr>`:'');
+}
+
+async function importarExcel(input){
+  const file=input.files[0];if(!file)return;try{
+    const ab=await file.arrayBuffer(),wb=XLSX.read(ab),ws=wb.Sheets[wb.SheetNames[0]],rows=XLSX.utils.sheet_to_json(ws,{defval:''});
+    const get=(r,...names)=>{for(const n of names){const key=Object.keys(r).find(k=>k.trim().toLowerCase()===n.trim().toLowerCase());if(key&&r[key]!==''&&r[key]!=null)return r[key]}return ''};
+    const tiendas=rows.map(r=>({id_tienda:String(get(r,'ID Tienda','ID TIENDA','id_tienda','ID Frog','ID FROG','ID')||''),nombre_tienda:get(r,'NOMBRE TIENDA','Nombre Tienda','nombre_tienda','Razon Social','RAZON SOCIAL','Nombre'),cadena:get(r,'CADENA','Cadena','cadena')||'Farmacia Guadalajara',direccion:get(r,'direccion','DIRECCION','Direccion','Dirección','DIRECCIÓN')||'Sin dirección',ciudad:get(r,'CIUDAD','Ciudad','ciudad'),estado:get(r,'ESTADO','Estado','estado'),zona:get(r,'ZONA','Zona','zona','REGION','Región','REGIÓN'),ruta:get(r,'RUTA','Ruta','ruta','CODIGO RUTA','Código Ruta'),lat:Number(get(r,'LAT','Lat','lat','LATITUD','Latitud','Coordenada Y')),lng:Number(get(r,'LNG','Lng','lng','LONGITUD','Longitud','Coordenada X')),activa:true})).filter(t=>t.nombre_tienda&&Number.isFinite(t.lat)&&Number.isFinite(t.lng));
+    if(!tiendas.length)throw new Error('No se encontraron filas válidas con coordenadas.');
+    for(let i=0;i<tiendas.length;i+=500){const {error}=await sb.from('tiendas').insert(tiendas.slice(i,i+500));if(error)throw error}
+    input.value='';await loadCatalogos();showToast(`${tiendas.length} tiendas importadas.`);
+  }catch(e){console.error(e);showToast('Error al importar: '+(e.message||'archivo inválido'),5500)}
+}
+
+async function exportarDatos(){
+  const desde=document.getElementById('exp-desde').value,hasta=document.getElementById('exp-hasta').value;if(!desde||!hasta){showToast('Selecciona el rango.');return}const btn=document.getElementById('btn-export');btn.disabled=true;btn.textContent='Generando...';const {start,end}=dateBounds(desde,hasta);
+  try{
+    const [lev,vis]=await Promise.all([
+      fetchAll('levantamientos',q=>q.gte('marca_temporal',start).lt('marca_temporal',end).order('marca_temporal',{ascending:true})),
+      fetchAll('visitas',q=>q.gte('hora_inicio',start).lt('hora_inicio',end).order('hora_inicio',{ascending:true}))
+    ]);
+    const visitMap=new Map(vis.map(v=>[Number(v.id),v]));
+    const formRows=lev.map(l=>{const d=new Date(l.marca_temporal);return {
+      'MARCA TEMPORAL':fmtDateTime(l.marca_temporal),'MES':d.toLocaleDateString('es-MX',{month:'long'}).toUpperCase(),'AÑO':d.getFullYear(),'REGION ':l.region||'',
+      'NOMBRE DE LA TIENDA':l.nombre_tienda,'\nID DE LA TIENDA ':l.id_tienda,'\nRUTA ':l.ruta,'\nNOMBRE DEL PROMOTOR ':l.nombre_promotor,
+      'INVENTARIO TOTAL HYDROLIT MANZANA ':l.inventario_hydrolit_manzana,'INVENTARIO TOTAL HYDROLIT UVA':l.inventario_hydrolit_uva,'INVENTARIO TOTAL HYDROLIT COCO':l.inventario_hydrolit_coco,'INVENTARIO TOTAL HYDROLIT NARANJA - MANDARINA':l.inventario_hydrolit_naranja_mandarina,'INVENTARIO TOTAL HYDROLIT FRESA':l.inventario_hydrolit_fresa,
+      '¿HYDROLIT ESTA EN ANAQUEL?':yn(l.hydrolit_anaquel),'¿CUANTOS FRENTES DE HYDROLIT HAY EN ANAQUEL?':l.hydrolit_frentes_anaquel,'¿TIENES CABECERA DE HYDROLIT?':yn(l.hydrolit_cabecera),'¿HYDROLIT ESTA EN REFRIGERADOR?':yn(l.hydrolit_refrigerador),'¿CUANTOS FRENTES DE HYDROLIT HAY EN REFRIGERADOR?':l.hydrolit_frentes_refrigerador,
+      '\nINVENTARIO [XOT] ':l.inventario_xot,'\nCUANTOS FRENTES DE XOT EN REFRIGERADOR? ':l.xot_frentes_refrigerador,'\nLA PUERTA DE XOT CUENTA CON CANDADO? ':yn(l.xot_candado),'\nTIENES EXHIBICION ADICIONAL DE XOT? ':yn(l.xot_exhibicion_adicional),'\nCUANTAS EXHIBICIONES ADICIONALES DE XOT ':l.xot_cantidad_exhibiciones,
+      'TIENES EXHIBICION ADICIONAL DE HYDROLIT? (EN MOSTRADOR, CAJAS, ARETEROS ETC.)':yn(l.hydrolit_exhibicion_adicional),'CUANTAS EXHIBICIONES ADICIONALES DE HYDROLIT?':l.hydrolit_cantidad_exhibiciones,
+      'INVENTARIO TOTAL BLIST UVA':l.inventario_blist_uva,'INVENTARIO TOTAL BLIST LIMONADA ROSA':l.inventario_blist_limonada_rosa,'¿BLIST ESTA EN ANAQUEL?':yn(l.blist_anaquel),'¿CUANTOS FRENTES DE BLIST HAY EN ANAQUEL?':l.blist_frentes_anaquel,'¿BLIST ESTA EN REFRIGERADOR?':yn(l.blist_refrigerador),'¿CUANTOS FRENTES DE BLIST HAY EN REFRIGERADOR?':l.blist_frentes_refrigerador,'¿HAY EXHIBICIÓN ADICIONAL DE BLIST?':yn(l.blist_exhibicion_adicional),'¿CUANTAS EXHIBICIONES ADICIONALES DE BLIST HAY?':l.blist_cantidad_exhibiciones
+    }});
+    const visitRows=vis.map(v=>({'ID visita':v.id,'Código':v.codigo_promotor,'Promotor':v.nombre_promotor,'Región':v.region,'Ruta':v.ruta,'ID tienda':v.id_tienda,'Tienda':v.nombre_tienda,'Fecha':fmtDate(v.hora_inicio),'Entrada':fmtTime(v.hora_inicio),'Salida':fmtTime(v.hora_fin),'Duración (min)':v.duracion_min,'Cumple ≥40 min':v.duracion_min!=null?(Number(v.duracion_min)>=40?'Sí':'No'):'—','Distancia ingreso (m)':v.distancia_entrada_m!=null?Math.round(Number(v.distancia_entrada_m)):'','Precisión GPS (m)':v.precision_entrada_m!=null?Math.round(Number(v.precision_entrada_m)):'','Estado':v.hora_fin?'COMPLETADA':'EN_VISITA'}));
+    const days=[];let cur=new Date(`${desde}T00:00:00`),last=new Date(`${hasta}T00:00:00`);while(cur<=last){days.push(`${cur.getFullYear()}-${String(cur.getMonth()+1).padStart(2,'0')}-${String(cur.getDate()).padStart(2,'0')}`);cur.setDate(cur.getDate()+1)}
+    const ops=db.promotores.filter(isOperativePromotor),cumRows=[];for(const day of days){for(const p of ops){const c=lev.filter(l=>l.codigo_promotor===p.numero_empleado&&new Date(l.marca_temporal).toLocaleDateString('en-CA')===day).length;cumRows.push({'Fecha':day,'Código':p.numero_empleado,'Promotor':p.nombre_completo,'Región':normalizedZone(p),'Ruta':p.ruta,'Capturas':c,'Meta':META_DIARIA,'Cumplimiento %':pct(c,META_DIARIA)})}}
+    const regMap={};cumRows.forEach(r=>{const k=`${r['Fecha']}|${r['Región']}`;if(!regMap[k])regMap[k]={Fecha:r['Fecha'],Región:r['Región'],Capturas:0,Meta:0};regMap[k].Capturas+=r.Capturas;regMap[k].Meta+=r.Meta});const regRows=Object.values(regMap).map(r=>({...r,'Cumplimiento %':pct(r.Capturas,r.Meta)}));
+    const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(formRows),'BDD');XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(visitRows),'Visitas');XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(cumRows),'Cumplimiento');XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(regRows),'Resumen región');
+    XLSX.writeFile(wb,`JumexFragua_Levantamientos_${desde}_a_${hasta}.xlsx`);showToast(`${lev.length} levantamientos exportados.`,4500);
+  }catch(e){console.error(e);showToast('No se pudo generar el reporte: '+(e.message||'error'),5500)}finally{btn.disabled=false;btn.textContent='Exportar Excel'}
+}
+
+function switchTab(id,btn){document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));document.querySelectorAll('.nav-btn').forEach(x=>x.classList.remove('active'));document.getElementById('tab-'+id).classList.add('active');if(btn)btn.classList.add('active');const titles={dashboard:'Resumen operativo',visitas:'Visitas y capturas',promotores:'Promotores',tiendas:'Tiendas',exportar:'Exportar'};document.getElementById('top-title').textContent=titles[id]||'Jumex Fragua'}
+async function refreshCurrent(){const active=document.querySelector('.tab.active')?.id;if(active==='tab-dashboard')await loadDashboard();else if(active==='tab-visitas')await loadVisitasPeriodo();else if(active==='tab-promotores'||active==='tab-tiendas')await loadCatalogos();else showToast('No hay datos que actualizar en esta sección.')}
+
+window.addEventListener('load',async()=>{
+  try{const {data:{session}}=await sb.auth.getSession();if(session&&await requireAdmin())await enterApp(session);else if(session)await sb.auth.signOut()}catch(e){console.error(e)}
 });
-
-function doLogout() {
-  sb.auth.signOut();
-  location.reload();
-}
-
-async function initApp() {
-  initMap();
-  await loadAll();
-  renderAll();
-  subscribeRealtime();
-
-  const ahora = new Date();
-  const hoy = `${ahora.getFullYear()}-${String(ahora.getMonth()+1).padStart(2,'0')}-${String(ahora.getDate()).padStart(2,'0')}`;
-  document.getElementById('export-fecha-desde').value = hoy;
-  document.getElementById('export-fecha-hasta').value = hoy;
-
-  await cargarPalabraClave();
-}
-
-async function cargarPalabraClavePorFecha(fecha) {
-  const { data } = await sb.from('palabra_clave').select('*').eq('fecha', fecha).limit(1);
-  document.getElementById('input-palabra-clave').value = (data && data.length > 0) ? data[0].palabra : '';
-}
-
-async function cargarPalabraClave() {
-  const ahora = new Date();
-  const hoy = `${ahora.getFullYear()}-${String(ahora.getMonth()+1).padStart(2,'0')}-${String(ahora.getDate()).padStart(2,'0')}`;
-  document.getElementById('input-palabra-fecha').value = hoy;
-  const { data } = await sb.from('palabra_clave').select('*').eq('fecha', hoy).limit(1);
-  document.getElementById('input-palabra-clave').value = (data && data.length > 0) ? data[0].palabra : '';
-}
-
-async function guardarPalabraClave() {
-  const palabra = document.getElementById('input-palabra-clave').value.trim().toUpperCase();
-  const fecha = document.getElementById('input-palabra-fecha').value;
-  if (!palabra) { showToast('Escribe una palabra clave primero.'); return; }
-  if (!fecha) { showToast('Selecciona la fecha para la que aplica.'); return; }
-
-  const { error } = await sb.from('palabra_clave').upsert({ fecha, palabra }, { onConflict: 'fecha' });
-  if (error) { showToast('Error al guardar. Revisa la consola.'); console.error(error); return; }
-  showToast(`Palabra clave guardada para ${fecha}: ${palabra}`);
-}
-
-function initMap() {
-  map = L.map('map', { zoomControl: true }).setView([20.5, -100.3], 6);
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap', maxZoom: 19 }).addTo(map);
-}
-
-async function loadAll() {
-  const inicioHoy = new Date();
-  inicioHoy.setHours(0,0,0,0);
-  const hoy = inicioHoy.toISOString();
-
-  const [prom, tien, chk, gps, vis] = await Promise.all([
-    sb.from('promotor').select('*').eq('activo', true),
-    sb.from('tiendas').select('*').eq('activa', true),
-    sb.from('checkins').select('*').gte('fecha', hoy),
-    sb.from('gps_logs').select('*').gte('fecha', hoy).order('fecha', { ascending: false }),
-    sb.from('visitas').select('*').gte('hora_inicio', hoy),
-  ]);
-
-  db.visitas = vis.data || [];
-
-  db.promotores = prom.data || [];
-  db.tiendas    = tien.data || [];
-  db.checkins   = chk.data  || [];
-  db.gps        = gps.data  || [];
-}
-
-function subscribeRealtime() {
-  sb.channel('gps_realtime')
-    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'gps_logs' }, payload => {
-      db.gps.unshift(payload.new);
-      renderMap();
-      renderStats();
-      renderSidebar();
-    })
-    .subscribe();
-
-  sb.channel('checkins_realtime')
-    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'checkins' }, payload => {
-      db.checkins.push(payload.new);
-      renderStats();
-      renderSidebar();
-      renderTablaPromotores();
-    })
-    .subscribe();
-}
-
-function renderAll() {
-  renderSidebar();
-  renderMap();
-  renderStats();
-  renderTablaPromotores();
-  renderTablaTiendas();
-}
-
-function isHoy(iso) {
-  if (!iso) return false;
-  const d = new Date(iso);
-  const hoy = new Date();
-  return d.getFullYear() === hoy.getFullYear()
-      && d.getMonth() === hoy.getMonth()
-      && d.getDate() === hoy.getDate();
-}
-
-function renderSidebar() {
-  const list = document.getElementById('prom-list');
-  list.innerHTML = db.promotores.map(p => {
-    const activo = db.checkins.some(c => c.codigo_promotor === p.numero_empleado && isHoy(c.fecha));
-    const gpsLibre = p.gps_activo === false;
-    const btnLiberar = activo ? `<button class="btn btn-sm" onclick="event.stopPropagation(); toggleGPS(${p.id}, ${!gpsLibre})"
-        style="font-size:10px;padding:3px 7px;margin-left:4px;background:${gpsLibre ? '#e8f5e9' : '#fce4ec'};color:${gpsLibre ? '#2e7d32' : '#c62828'};border:1px solid ${gpsLibre ? '#a5d6a7' : '#ef9a9a'};border-radius:4px;cursor:pointer;white-space:nowrap;">
-        ${gpsLibre ? '&#9654; Reactivar' : '&#9632; Liberar'}
-      </button>` : '';
-    return `<div class="promotor-item" onclick="focusPromotor('${p.numero_empleado}')">
-      <div class="p-avatar ${activo?'active':''}">${initials(p.nombre_completo)}</div>
-      <div class="p-info">
-        <div class="p-name">${p.nombre_completo}</div>
-        <div class="p-sub">${p.ruta || 'Sin ruta'} · ${p.numero_empleado}</div>
-      </div>
-      ${btnLiberar}
-      <div class="p-dot ${activo && !gpsLibre ? 'on' : ''}"></div>
-    </div>`;
-  }).join('') || '<div style="padding:20px;font-size:13px;color:var(--gray-400)">Sin promotores registrados.</div>';
-}
-
-async function toggleGPS(id, desactivar) {
-  const promotor = db.promotores.find(p => p.id === id);
-  if (!promotor) return;
-  const accion = desactivar ? 'liberar (desactivar GPS)' : 'reactivar GPS de';
-  if (!confirm(`¿${accion.charAt(0).toUpperCase() + accion.slice(1)} ${promotor.nombre_completo}?`)) return;
-
-  const { error } = await sb.from('promotor').update({ gps_activo: !desactivar }).eq('id', id);
-  if (error) { showToast('Error al actualizar. Revisa la consola.'); console.error(error); return; }
-
-  promotor.gps_activo = !desactivar;
-  renderSidebar();
-  showToast(desactivar
-    ? `GPS de ${promotor.nombre_completo} desactivado — ya no se registrará su ubicación.`
-    : `GPS de ${promotor.nombre_completo} reactivado.`
-  , 4000);
-}
-
-function filterProms(q) {
-  document.querySelectorAll('.promotor-item').forEach(el => {
-    el.style.display = el.textContent.toLowerCase().includes(q.toLowerCase()) ? '' : 'none';
-  });
-}
-
-function renderMap() {
-  Object.values(markers).forEach(m => map.removeLayer(m));
-  markers = {};
-
-  const tiendaIcon = L.divIcon({ className:'', html:`<div style="width:8px;height:8px;border-radius:2px;background:#EF9F27;border:1.5px solid white"></div>`, iconSize:[8,8], iconAnchor:[4,4] });
-  const promIcon   = L.divIcon({ className:'', html:`<div style="width:12px;height:12px;border-radius:50%;background:#1D9E75;border:2px solid white;box-shadow:0 1px 4px rgba(0,0,0,0.3)"></div>`, iconSize:[12,12], iconAnchor:[6,6] });
-
-  db.tiendas.forEach(t => {
-    const lat = parseFloat(t.lat), lng = parseFloat(t.lng);
-    if (!isNaN(lat) && !isNaN(lng)) {
-      L.marker([lat,lng], {icon:tiendaIcon}).addTo(map).bindPopup(`<b>${t.nombre_tienda||t.cadena}</b><br><span style="font-family:monospace;font-size:12px">${t.id_tienda||'—'}</span>`);
-    }
-  });
-
-  const ultimasPos = {};
-  const LIMITE_MS = 15 * 60 * 1000; // 15 minutos
-  const ahora = Date.now();
-  db.gps.filter(g => isHoy(g.fecha)).forEach(g => {
-    if (!ultimasPos[g.codigo_promotor] || g.fecha > ultimasPos[g.codigo_promotor].fecha) ultimasPos[g.codigo_promotor] = g;
-  });
-
-  Object.values(ultimasPos).forEach(g => {
-    // No mostrar si el último ping tiene más de 15 minutos
-    if (ahora - new Date(g.fecha).getTime() > LIMITE_MS) return;
-    const lat = parseFloat(g.lat), lng = parseFloat(g.lng);
-    if (!isNaN(lat) && !isNaN(lng)) {
-      const p = db.promotores.find(x => x.numero_empleado === g.codigo_promotor);
-      const nombre = p?.nombre_completo || g.codigo_promotor;
-      const bat = g.bateria != null ? ` · 🔋${g.bateria}%` : '';
-      const m = L.marker([lat,lng], {icon:promIcon}).addTo(map)
-        .bindPopup(`<b>${nombre}</b><br>${g.codigo_promotor}<br>${new Date(g.fecha).toLocaleTimeString('es-MX')}${bat}`);
-      markers[g.codigo_promotor] = m;
-    }
-  });
-}
-
-function focusPromotor(codigo) {
-  if (markers[codigo]) {
-    document.querySelector('.topbar-tab').click();
-    map.setView(markers[codigo].getLatLng(), 15);
-    markers[codigo].openPopup();
-  }
-}
-
-function renderStats() {
-  const checkinsHoy = db.checkins.filter(c => isHoy(c.fecha));
-  const gpsHoy = db.gps.filter(g => isHoy(g.fecha));
-  document.getElementById('st-activos').textContent = checkinsHoy.length;
-  document.getElementById('st-gps').textContent = gpsHoy.length;
-  document.getElementById('st-sin-checkin').textContent = Math.max(0, db.promotores.length - checkinsHoy.length);
-  document.getElementById('st-total').textContent = db.promotores.length;
-}
-
-function renderTablaPromotores() {
-  const tbody = document.getElementById('tabla-promotores');
-  tbody.innerHTML = db.promotores.map(p => {
-    const checkin = db.checkins.find(c => c.codigo_promotor === p.numero_empleado && isHoy(c.fecha));
-    const estado = checkin
-      ? `<span class="badge badge-green">Check-in ${new Date(checkin.fecha).toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'})}</span>`
-      : `<span class="badge badge-gray">Sin check-in</span>`;
-    return `<tr>
-      <td><b>${p.nombre_completo}</b></td>
-      <td><span style="font-family:monospace">${p.numero_empleado}</span></td>
-      <td>${p.region || '—'}</td>
-      <td>${p.ruta || '<span style="color:var(--gray-400)">Sin asignar</span>'}</td>
-      <td>${estado}</td>
-      <td>
-        <button class="btn btn-sm btn-outline" onclick="editarPromotor(${p.id})" style="margin-right:4px">Editar</button>
-        <button class="btn btn-sm btn-outline" style="color:var(--danger);border-color:#f5c4b3" onclick="bajaPromotor(${p.id})">Baja</button>
-      </td>
-    </tr>`;
-  }).join('') || `<tr><td colspan="6" style="text-align:center;color:var(--gray-400);padding:20px">Sin promotores. Agrega el primero.</td></tr>`;
-}
-
-function renderTablaTiendas() {
-  const tbody = document.getElementById('tabla-tiendas');
-  const muestra = db.tiendas.slice(0,200);
-  tbody.innerHTML = muestra.map(t => `<tr>
-      <td style="font-family:monospace;font-size:11px">${t.id||'—'}</td>
-      <td style="font-family:monospace;font-size:11px">${t.id_tienda||'—'}</td>
-      <td>${t.cadena||'—'}</td>
-      <td>${t.nombre_tienda||'—'}</td>
-      <td style="color:var(--gray-400);font-size:12px">${t.direccion||'—'}</td>
-      <td style="font-family:monospace;font-size:11px">${t.lat||'—'}</td>
-      <td style="font-family:monospace;font-size:11px">${t.lng||'—'}</td>
-      <td>${t.ciudad||'—'}</td>
-      <td>${t.estado||'—'}</td>
-      <td><span class="badge badge-gray">${t.zona||'—'}</span></td>
-      <td><span class="badge ${t.activa ? 'badge-green' : 'badge-red'}">${t.activa ? 'Sí' : 'No'}</span></td>
-    </tr>`).join('') + (db.tiendas.length > 200 ? `<tr><td colspan="11" style="text-align:center;color:var(--gray-400);padding:10px">... y ${db.tiendas.length-200} más</td></tr>` : '');
-}
-
-function showModalPromotor() {
-  document.getElementById('mp-titulo').textContent = 'Nuevo promotor';
-  document.getElementById('mp-id').value = '';
-  document.getElementById('mp-nombre').value = '';
-  document.getElementById('mp-codigo').value = '';
-  document.getElementById('mp-region').value = '';
-  document.getElementById('mp-zona').value = '';
-  document.getElementById('mp-ruta').value = '';
-  document.getElementById('mp-rol').value = 'promotor';
-  openModal('modal-promotor');
-}
-
-function editarPromotor(id) {
-  const p = db.promotores.find(x => x.id === id);
-  if (!p) return;
-  document.getElementById('mp-titulo').textContent = 'Editar promotor';
-  document.getElementById('mp-id').value = p.id;
-  document.getElementById('mp-nombre').value = p.nombre_completo || '';
-  document.getElementById('mp-codigo').value = p.numero_empleado || '';
-  document.getElementById('mp-region').value = p.region || '';
-  document.getElementById('mp-zona').value = p.zona || '';
-  document.getElementById('mp-ruta').value = p.ruta || '';
-  document.getElementById('mp-rol').value = p.rol || 'promotor';
-  openModal('modal-promotor');
-}
-
-async function guardarPromotor() {
-  const id             = document.getElementById('mp-id').value;
-  const nombre_completo = document.getElementById('mp-nombre').value.trim();
-  const numero_empleado = document.getElementById('mp-codigo').value.trim();
-  const region         = document.getElementById('mp-region').value.trim();
-  const zona           = document.getElementById('mp-zona').value.trim();
-  const ruta           = document.getElementById('mp-ruta').value.trim();
-  const rol            = document.getElementById('mp-rol').value;
-
-  if (!nombre_completo || !numero_empleado) { showToast('Completa nombre y número de empleado.'); return; }
-  if (!zona) { showToast('Selecciona una zona.'); return; }
-
-  let error;
-  if (id) {
-    // Edición
-    ({ error } = await sb.from('promotor').update({ nombre_completo, numero_empleado, region, zona, ruta, rol }).eq('id', id));
-  } else {
-    // Alta nueva
-    ({ error } = await sb.from('promotor').insert({ nombre_completo, numero_empleado, region, zona, ruta, rol, activo: true }));
-  }
-
-  if (error) { showToast('Error: ' + error.message); return; }
-
-  closeModal('modal-promotor');
-  await loadAll();
-  renderAll();
-  showToast(id ? `${nombre_completo} actualizado.` : `${rol === 'supervisor' ? 'Supervisor' : 'Promotor'} ${nombre_completo} agregado.`);
-}
-
-async function bajaPromotor(id) {
-  if (!confirm('¿Dar de baja este promotor?')) return;
-  const { error } = await sb.from('promotor').update({ activo: false }).eq('id', id);
-  if (error) { showToast('Error: ' + error.message); return; }
-  await loadAll();
-  renderAll();
-  showToast('Promotor dado de baja.');
-}
-
-async function importarExcel(input) {
-  const file = input.files[0];
-  if (!file) return;
-  const data = await file.arrayBuffer();
-  const wb = XLSX.read(data);
-  const ws = wb.Sheets[wb.SheetNames[0]];
-  const rows = XLSX.utils.sheet_to_json(ws);
-
-  // Normalizar encabezados a minúsculas para manejar LAT/lat/Lat etc.
-  const normalize = (r, ...keys) => {
-    for (const k of keys) {
-      if (r[k] !== undefined && r[k] !== null && r[k] !== '') return r[k];
-      const kl = k.toLowerCase();
-      const ku = k.toUpperCase();
-      if (r[kl] !== undefined && r[kl] !== null && r[kl] !== '') return r[kl];
-      if (r[ku] !== undefined && r[ku] !== null && r[ku] !== '') return r[ku];
-    }
-    return '';
-  };
-
-  const tiendas = rows.map(r => ({
-    id_tienda:     String(normalize(r, 'ID Tienda', 'ID TIENDA', 'id_tienda', 'ID Frog', 'ID FROG', 'ID') || ''),
-    nombre_tienda: normalize(r, 'NOMBRE TIENDA', 'Nombre Tienda', 'nombre_tienda', 'Razon Social', 'RAZON SOCIAL', 'Nombre'),
-    cadena:        normalize(r, 'CADENA', 'Cadena', 'cadena') || 'Farmacia Guadalajara',
-    direccion:     normalize(r, 'direccion', 'DIRECCION', 'Direccion', 'Dirección', 'DIRECCIÓN') || [r['Calle'], r['Colonia']].filter(Boolean).join(', ') || 'Sin dirección',
-    ciudad:        normalize(r, 'CIUDAD', 'Ciudad', 'ciudad'),
-    estado:        normalize(r, 'ESTADO', 'Estado', 'estado'),
-    zona:          normalize(r, 'ZONA', 'Zona', 'zona', 'REGION', 'Región', 'REGIÓN'),
-    ruta:          normalize(r, 'RUTA', 'Ruta', 'ruta', 'CODIGO RUTA', 'Código Ruta'),
-    lat:           parseFloat(normalize(r, 'LAT', 'Lat', 'lat', 'LATITUD', 'Latitud', 'Coordenada Y')),
-    lng:           parseFloat(normalize(r, 'LNG', 'Lng', 'lng', 'LONGITUD', 'Longitud', 'Coordenada X')),
-    activa:        true,
-  })).filter(t => t.nombre_tienda && !isNaN(t.lat) && !isNaN(t.lng));
-
-  if (tiendas.length === 0) { showToast('No se encontraron filas válidas con coordenadas.'); return; }
-
-  const { error } = await sb.from('tiendas').insert(tiendas);
-  if (error) { showToast('Error al importar: ' + error.message); return; }
-
-  await loadAll();
-  renderAll();
-  showToast(`${tiendas.length} tiendas importadas correctamente.`);
-  input.value = '';
-}
-
-async function exportarDatos() {
-  const desdeInput = document.getElementById('export-fecha-desde').value;
-  const hastaInput  = document.getElementById('export-fecha-hasta').value;
-
-  if (!desdeInput || !hastaInput) {
-    showToast('Selecciona fecha "Desde" y "Hasta" primero.');
-    return;
-  }
-
-  const desde = `${desdeInput}T00:00:00`;
-  // sumamos un día a "hasta" para incluir todo ese día completo
-  const hastaDate = new Date(`${hastaInput}T00:00:00`);
-  hastaDate.setDate(hastaDate.getDate() + 1);
-  const hasta = hastaDate.toISOString();
-
-  showToast('Generando reporte, espera un momento...');
-
-  const [checkinsRes, gpsRes, visitasRes] = await Promise.all([
-    sb.from('checkins').select('*').gte('fecha', desde).lt('fecha', hasta).order('fecha', { ascending: true }),
-    sb.from('gps_logs').select('*').gte('fecha', desde).lt('fecha', hasta).order('fecha', { ascending: true }),
-    sb.from('visitas').select('*').gte('hora_inicio', desde).lt('hora_inicio', hasta).order('hora_inicio', { ascending: true }),
-  ]);
-
-  const checkinsData = checkinsRes.data || [];
-  const gpsData = gpsRes.data || [];
-  const visitasData = visitasRes.data || [];
-
-  if (checkinsRes.error || gpsRes.error || visitasRes.error) {
-    showToast('Error al consultar Supabase. Revisa la consola.');
-    console.error(checkinsRes.error, gpsRes.error, visitasRes.error);
-    return;
-  }
-
-  const wb = XLSX.utils.book_new();
-
-  const HORA_LIMITE = { h: 8, m: 15 }; // 8:15am — hora límite de tolerancia
-
-  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(checkinsData.map(c => {
-    const fechaCheckin = new Date(c.fecha);
-    const limite = new Date(fechaCheckin);
-    limite.setHours(HORA_LIMITE.h, HORA_LIMITE.m, 0, 0);
-    const minutosTarde = Math.max(0, Math.round((fechaCheckin - limite) / 60000));
-    const retardo = fechaCheckin > limite;
-    return {
-      'Código': c.codigo_promotor,
-      'Nombre': c.nombre_promotor,
-      'Fecha': c.fecha?.slice(0,10),
-      'Hora check-in': formatHora(c.fecha),
-      'Hora límite': '08:15',
-      'Retardo': retardo ? 'Sí' : 'No',
-      'Minutos tarde': retardo ? minutosTarde : 0,
-      'Latitud': c.lat,
-      'Longitud': c.lng,
-    };
-  })), 'Check-ins');
-
-  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(gpsData.map(g=>({
-    'Código': g.codigo_promotor, 'Fecha': g.fecha?.slice(0,10), 'Hora': formatHora(g.fecha),
-    'Latitud': g.lat, 'Longitud': g.lng, 'Precisión(m)': g.precision, 'Batería(%)': g.bateria,
-  }))), 'Registros GPS');
-
-  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(visitasData.map(v=>({
-    'Código': v.codigo_promotor, 'Nombre': v.nombre_promotor, 'Tienda': v.nombre_tienda,
-    'Fecha': v.hora_inicio?.slice(0,10), 'Hora entrada': formatHora(v.hora_inicio), 'Hora salida': formatHora(v.hora_fin),
-    'Duración (min)': v.duracion_min, 'Cumple 40 min': v.cumple_tiempo ? 'Sí' : 'No',
-  }))), 'Visitas a tienda');
-
-  // Resumen por promotor y día: visitas realizadas vs meta de 6/día
-  const resumenMap = {};
-  visitasData.forEach(v => {
-    const dia = v.hora_inicio?.slice(0,10);
-    const key = `${v.codigo_promotor}|${dia}`;
-    if (!resumenMap[key]) resumenMap[key] = { codigo: v.codigo_promotor, nombre: v.nombre_promotor, fecha: dia, visitas: 0, cumplenTiempo: 0 };
-    resumenMap[key].visitas++;
-    if (v.cumple_tiempo) resumenMap[key].cumplenTiempo++;
-  });
-  const META_VISITAS_DIA = 6;
-  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(Object.values(resumenMap).map(r=>({
-    'Código': r.codigo, 'Nombre': r.nombre, 'Fecha': r.fecha,
-    'Visitas realizadas': r.visitas, 'Meta diaria': META_VISITAS_DIA,
-    'Cumple meta': r.visitas >= META_VISITAS_DIA ? 'Sí' : 'No',
-    'Visitas con tiempo adecuado (≥40min)': r.cumplenTiempo,
-  }))), 'Resumen cumplimiento');
-
-  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(db.promotores.map(p=>({
-    'Nombre': p.nombre_completo, 'No. Empleado': p.numero_empleado, 'Región': p.region, 'Ruta': p.ruta,
-  }))), 'Promotores');
-
-  XLSX.writeFile(wb, `JumexFragua_${desdeInput}_a_${hastaInput}.xlsx`);
-  showToast('Archivo descargado correctamente.');
-}
-
-function switchTab(id, btn) {
-  document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));
-  document.querySelectorAll('.topbar-tab').forEach(t=>t.classList.remove('active'));
-  document.getElementById(`tab-${id}`).classList.add('active');
-  if (btn) btn.classList.add('active');
-  if (id === 'mapa') setTimeout(()=>map.invalidateSize(), 50);
-}
-
-function openModal(id)  { document.getElementById(id).classList.add('show'); }
-function closeModal(id) { document.getElementById(id).classList.remove('show'); }
-
-function showToast(msg) {
-  const t = document.getElementById('toast-admin');
-  t.textContent = msg; t.classList.add('show');
-  setTimeout(()=>t.classList.remove('show'), 2800);
-}
-
-function initials(nombre) { return (nombre||'').trim().split(' ').slice(0,2).map(w=>w[0]||'').join('').toUpperCase(); }
-function formatHora(iso) { return iso ? new Date(iso).toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit',second:'2-digit'}) : '—'; }
 </script>
 </body>
 </html>
