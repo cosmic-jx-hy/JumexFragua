@@ -39,6 +39,7 @@ button{cursor:pointer}
 .sidebar-foot{margin-top:auto;border-top:1px solid var(--gray-100);padding:14px 8px 0}.admin-email{font-size:11px;color:var(--gray-400);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-bottom:8px}
 
 .shell{margin-left:var(--sidebar);min-height:100vh}.topbar{height:62px;background:#fff;border-bottom:1px solid var(--gray-200);display:flex;align-items:center;padding:0 24px;position:sticky;top:0;z-index:15}.top-title{font-size:15px;font-weight:700}.top-sub{font-size:11px;color:var(--gray-400);margin-left:10px}.top-spacer{flex:1}.refresh-info{font-size:11px;color:var(--gray-400);margin-right:10px}
+.keyword-admin{display:flex;align-items:center;gap:6px;margin-right:14px;padding:5px 8px;border:1px solid var(--gray-200);border-radius:10px;background:var(--gray-50)}.keyword-admin .kw-label{font-size:10px;font-weight:800;color:var(--gray-500);text-transform:uppercase;letter-spacing:.45px;white-space:nowrap}.keyword-admin input[type=date]{width:128px;padding:5px 6px;border:1px solid var(--gray-200);border-radius:7px;background:#fff;font-size:11px}.keyword-admin input[type=text]{width:120px;padding:5px 8px;border:1px solid var(--gray-200);border-radius:7px;background:#fff;font-size:11px;text-transform:uppercase;font-weight:750;letter-spacing:.5px}.keyword-admin button{padding:6px 9px;font-size:10px}.keyword-admin .kw-status{font-size:10px;color:var(--gray-400);white-space:nowrap}
 .main{padding:22px;max-width:1500px;margin:0 auto}.tab{display:none}.tab.active{display:block}
 .page-head{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;margin-bottom:18px}.page-head h1{font-size:21px}.page-head p{font-size:12px;color:var(--gray-600);margin-top:4px}.actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 
@@ -88,7 +89,7 @@ body.exec-capture{background:#fff}.exec-capture .sidebar,.exec-capture .topbar{d
 }
 
 @media(max-width:1050px){.stats{grid-template-columns:repeat(3,1fr)}.grid-2{grid-template-columns:1fr}}
-@media(max-width:760px){:root{--sidebar:0px}.sidebar{display:none}.shell{margin-left:0}.main{padding:14px}.topbar{padding:0 14px}.stats{grid-template-columns:1fr 1fr}.page-head{align-items:flex-start;flex-direction:column}.detail-grid,.form-grid,.inventory-grid{grid-template-columns:1fr}.form-grid .full{grid-column:auto}.exec-kpis{grid-template-columns:1fr 1fr}.exec-grid,.exec-attention{grid-template-columns:1fr}.exec-report{padding:14px}.exec-header{flex-direction:column}.exec-status{text-align:left}}
+@media(max-width:760px){:root{--sidebar:0px}.sidebar{display:none}.shell{margin-left:0}.main{padding:14px}.topbar{padding:0 14px}.keyword-admin{display:none}.stats{grid-template-columns:1fr 1fr}.page-head{align-items:flex-start;flex-direction:column}.detail-grid,.form-grid,.inventory-grid{grid-template-columns:1fr}.form-grid .full{grid-column:auto}.exec-kpis{grid-template-columns:1fr 1fr}.exec-grid,.exec-attention{grid-template-columns:1fr}.exec-report{padding:14px}.exec-header{flex-direction:column}.exec-status{text-align:left}}
 </style>
 </head>
 <body>
@@ -127,6 +128,13 @@ body.exec-capture{background:#fff}.exec-capture .sidebar,.exec-capture .topbar{d
       <div class="top-title" id="top-title">Reporte ejecutivo</div>
       <div class="top-sub">Meta: 6 capturas por promotor / día</div>
       <div class="top-spacer"></div>
+      <div class="keyword-admin" title="Define la palabra clave que verán los promotores el día seleccionado">
+        <span class="kw-label">Palabra clave</span>
+        <input type="date" id="keyword-fecha" onchange="cargarPalabraClaveAdmin(this.value)">
+        <input type="text" id="keyword-input" maxlength="24" placeholder="Ej. AGUILA" oninput="this.value=this.value.toUpperCase()">
+        <button class="btn btn-primary btn-sm" onclick="guardarPalabraClaveAdmin()">Guardar</button>
+        <span class="kw-status" id="keyword-status">—</span>
+      </div>
       <span class="refresh-info" id="refresh-info">—</span>
       <button class="btn btn-outline btn-sm" onclick="refreshCurrent()">Actualizar</button>
     </header>
@@ -379,6 +387,8 @@ async function enterApp(session){
   document.getElementById('login-overlay').style.display='none';document.getElementById('app').style.display='block';
   document.getElementById('admin-email').textContent=session?.user?.email||'Administrador';
   const hoy=todayLocal();['exec-fecha','dash-fecha','vis-desde','vis-hasta','exp-desde','exp-hasta'].forEach(id=>document.getElementById(id).value=hoy);
+  document.getElementById('keyword-fecha').value=hoy;
+  await cargarPalabraClaveAdmin(hoy);
   await loadCatalogos();
   await loadExecutive();
   await loadDashboard(false);
@@ -387,6 +397,39 @@ async function enterApp(session){
 }
 
 async function doLogout(){if(refreshTimer)clearInterval(refreshTimer);await sb.auth.signOut();location.reload()}
+
+async function cargarPalabraClaveAdmin(fecha){
+  const input=document.getElementById('keyword-input');
+  const status=document.getElementById('keyword-status');
+  if(!fecha){input.value='';status.textContent='Selecciona fecha';return}
+  status.textContent='Cargando…';
+  try{
+    const {data,error}=await sb.from('palabra_clave').select('fecha,palabra').eq('fecha',fecha).maybeSingle();
+    if(error)throw error;
+    input.value=(data?.palabra||'').toUpperCase();
+    status.textContent=data?.palabra?'Guardada':'Sin palabra';
+  }catch(e){
+    console.error(e);input.value='';status.textContent='Error';showToast('No se pudo consultar la palabra clave.',4000);
+  }
+}
+
+async function guardarPalabraClaveAdmin(){
+  const fecha=document.getElementById('keyword-fecha').value;
+  const palabra=document.getElementById('keyword-input').value.trim().toUpperCase();
+  const status=document.getElementById('keyword-status');
+  if(!fecha){showToast('Selecciona la fecha.');return}
+  if(!palabra){showToast('Escribe una palabra clave.');return}
+  status.textContent='Guardando…';
+  try{
+    const {error}=await sb.from('palabra_clave').upsert({fecha,palabra},{onConflict:'fecha'});
+    if(error)throw error;
+    document.getElementById('keyword-input').value=palabra;
+    status.textContent='Guardada ✓';
+    showToast(`Palabra clave para ${fecha}: ${palabra}`);
+  }catch(e){
+    console.error(e);status.textContent='Error';showToast('No se pudo guardar la palabra clave.',4500);
+  }
+}
 
 async function loadCatalogos(){
   try{

@@ -28,6 +28,7 @@ input[type=number]{font-variant-numeric:tabular-nums}textarea{min-height:84px;re
 .main{padding:14px;display:flex;flex-direction:column;gap:12px}
 .card{background:#fff;border:1px solid #e9e7df;border-radius:var(--radius);padding:16px}.card-title{font-size:13px;font-weight:700;margin-bottom:10px}.muted{color:var(--gray-600)}.small{font-size:12px}.tiny{font-size:11px}
 .user-row{display:flex;gap:12px;align-items:center}.avatar{width:46px;height:46px;border-radius:50%;background:var(--brand-light);color:var(--brand-dark);display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700}.user-name{font-weight:700;font-size:15px}.user-meta{font-size:12px;color:var(--gray-600);margin-top:3px}
+.keyword-card{display:none;background:#fff8df;border-color:#ecd37f;text-align:center;padding:15px 16px}.keyword-card.show{display:block}.keyword-eyebrow{font-size:10px;font-weight:800;color:#876700;letter-spacing:.8px;text-transform:uppercase}.keyword-word{font-size:24px;font-weight:850;color:#5e4800;letter-spacing:1.5px;margin-top:3px;word-break:break-word}.keyword-note{font-size:11px;color:#8a6d00;margin-top:4px;line-height:1.4}
 .visit-hero{background:linear-gradient(145deg,var(--brand),var(--brand-dark));color:white;border:0}.visit-hero h2{font-size:18px;margin-bottom:5px}.visit-hero p{font-size:13px;opacity:.86;line-height:1.4}.visit-hero .btn{margin-top:14px;background:rgba(255,255,255,.20);color:#fff;width:100%}
 .visit-active{border-color:#b8e4d5}.status-pill{display:inline-flex;align-items:center;gap:6px;background:var(--brand-light);color:var(--brand-dark);font-size:11px;font-weight:700;border-radius:30px;padding:5px 9px;margin-bottom:9px}.dot{width:7px;height:7px;border-radius:50%;background:var(--brand)}
 .visit-name{font-size:17px;font-weight:750}.visit-meta{font-size:12px;color:var(--gray-600);margin-top:4px;line-height:1.55}
@@ -77,6 +78,12 @@ input[type=number]{font-variant-numeric:tabular-nums}textarea{min-height:84px;re
         <div class="avatar" id="avatar">--</div>
         <div><div class="user-name" id="user-name">—</div><div class="user-meta" id="user-meta">—</div></div>
       </div>
+    </div>
+
+    <div class="card keyword-card" id="keyword-card">
+      <div class="keyword-eyebrow">Palabra clave de hoy</div>
+      <div class="keyword-word" id="keyword-word">—</div>
+      <div class="keyword-note">Utiliza la palabra asignada para las evidencias del día.</div>
     </div>
 
     <div class="card visit-hero" id="card-new-visit">
@@ -237,6 +244,7 @@ async function handleLogin(){
 async function enterMain(){
   showScreen('screen-main');
   renderUser();
+  await cargarPalabraClaveHoy();
   await cargarTiendasDeRuta();
   await cargarVisitaAbierta();
   renderVisitState();
@@ -247,6 +255,21 @@ function renderUser(){
   document.getElementById('avatar').textContent=initials(p.nombre_completo);
   document.getElementById('user-name').textContent=p.nombre_completo;
   document.getElementById('user-meta').textContent=`Empleado ${p.numero_empleado} · Ruta ${p.ruta||'—'} · ${p.region||p.zona||'—'}`;
+}
+
+async function cargarPalabraClaveHoy(){
+  const card=document.getElementById('keyword-card');
+  const word=document.getElementById('keyword-word');
+  try{
+    const hoy=new Date();
+    const fecha=`${hoy.getFullYear()}-${String(hoy.getMonth()+1).padStart(2,'0')}-${String(hoy.getDate()).padStart(2,'0')}`;
+    const {data,error}=await sb.from('palabra_clave').select('palabra').eq('fecha',fecha).maybeSingle();
+    if(error)throw error;
+    if(data?.palabra){word.textContent=data.palabra.toUpperCase();card.classList.add('show')}
+    else{word.textContent='—';card.classList.remove('show')}
+  }catch(e){
+    console.error('Palabra clave:',e);word.textContent='—';card.classList.remove('show');
+  }
 }
 
 async function cargarTiendasDeRuta(){
