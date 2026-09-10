@@ -167,10 +167,10 @@ input:focus,select:focus,textarea:focus{border-color:#56b99a;background:#fff;box
     <div class="sync-card" id="sync-card">
       <div class="sync-dot" id="sync-dot"></div>
       <div class="sync-copy">
-        <strong id="sync-title">Preparando modo offline…</strong>
+        <strong id="sync-title">Preparando información…</strong>
         <span id="sync-detail">Cargando ruta y datos guardados</span>
       </div>
-      <button class="sync-btn hidden" id="sync-btn" type="button" onclick="syncPending(true)">Sincronizar</button>
+      <button class="sync-btn hidden" id="sync-btn" type="button" onclick="syncPending(true)">Enviar pendientes</button>
     </div>
 
     <div class="card keyword-card" id="keyword-card">
@@ -352,11 +352,23 @@ async function restoreDraft(){
 }
 async function countPending(){const all=await idbAll('pending');const code=state.promotor?.numero_empleado;state.pendingCount=code?all.filter(x=>x.codigo_promotor===code).length:all.length;renderSyncStatus();return state.pendingCount}
 function renderSyncStatus(){
-  const dot=document.getElementById('sync-dot'),title=document.getElementById('sync-title'),detail=document.getElementById('sync-detail'),btn=document.getElementById('sync-btn');if(!dot)return;
-  dot.className='sync-dot '+(navigator.onLine?'online':'offline');
   const p=state.pendingCount||0;
-  if(navigator.onLine){title.textContent=p?`${p} visita${p===1?'':'s'} pendiente${p===1?'':'s'} de sincronizar`:'Conectado · ruta disponible offline';detail.textContent=p?'Tus registros están guardados en este teléfono.':'Los datos de tu ruta quedan guardados para trabajar sin conexión.';btn.classList.toggle('hidden',p===0)}
-  else{title.textContent='Sin conexión · modo offline activo';detail.textContent=p?`${p} visita${p===1?'':'s'} guardada${p===1?'':'s'} pendiente${p===1?'':'s'} de envío`:'Puedes registrar visitas con las tiendas guardadas en el teléfono.';btn.classList.add('hidden')}
+  const dot=document.getElementById('sync-dot');
+  const title=document.getElementById('sync-title');
+  const detail=document.getElementById('sync-detail');
+  const btn=document.getElementById('sync-btn');
+
+  dot.className='sync-dot '+(navigator.onLine?'online':'offline');
+
+  if(p>0){
+    title.textContent=`${p} registro${p===1?'':'s'} pendiente${p===1?'':'s'} de envío`;
+    detail.textContent='Tus respuestas están guardadas y se enviarán automáticamente.';
+    btn.classList.toggle('hidden',!navigator.onLine);
+  }else{
+    title.textContent='Información lista';
+    detail.textContent='No hay registros pendientes.';
+    btn.classList.add('hidden');
+  }
 }
 async function registerOfflineApp(){
   try{
@@ -388,7 +400,7 @@ async function handleLogin(){
   const codigo=document.getElementById('input-codigo').value.trim();
   const pin=document.getElementById('input-pin').value.trim();
   const alert=document.getElementById('alert-login');
-  if(!navigator.onLine){alert.textContent='Para iniciar sesión por primera vez necesitas conexión. Si ya usaste este teléfono antes, cierra y vuelve a abrir la app para continuar offline.';alert.classList.remove('hidden');return}
+  if(!navigator.onLine){alert.textContent='No fue posible validar el acceso en este momento. Intenta nuevamente más tarde.';alert.classList.remove('hidden');return}
   if(!codigo||!pin){alert.textContent='Ingresa tu número de empleado y tu PIN.';alert.classList.remove('hidden');return}
   if(!/^\d+$/.test(codigo)){alert.textContent='El número de empleado debe contener solo números.';alert.classList.remove('hidden');return}
   const btn=document.getElementById('btn-login');btn.disabled=true;btn.innerHTML='<span class="spinner"></span>Verificando...';alert.classList.add('hidden');
@@ -475,7 +487,7 @@ function renderVisitState(){
     const v=state.visitaActual;
     document.getElementById('visit-store-name').textContent=v.nombre_tienda;
     const distancia=v.distancia_entrada_m!=null?` · GPS ${Math.round(v.distancia_entrada_m)} m de la tienda`:'';
-    const modo=(!v.server_id&&!v.id)?' · guardada offline':'';
+    const modo=(!v.server_id&&!v.id)?' · guardada':'';
     document.getElementById('visit-meta').textContent=`ID ${v.id_tienda} · Entrada ${fmtTime(v.hora_inicio_dispositivo||v.hora_inicio)}${distancia}${modo}`;
   }
 }
@@ -550,7 +562,7 @@ async function startVisit(idTienda){
     }
     closeStoreSheet();resetForm();renderVisitState();await countPending();
     setTimeout(()=>document.getElementById('inventory-form-wrap').scrollIntoView({behavior:'smooth',block:'start'}),100);
-    showToast(navigator.onLine&&localVisit.server_id?'Entrada registrada. Completa el levantamiento.':'Entrada validada y guardada en el teléfono. Puedes trabajar sin conexión.',4500);
+    showToast(navigator.onLine&&localVisit.server_id?'Entrada registrada. Completa el levantamiento.':'Entrada registrada. Completa el levantamiento.',4500);
   }catch(e){console.error(e);box.className='gps-box alert alert-danger show';const msg=(e&&e.message)||'No se pudo registrar la entrada.';box.textContent=msg.includes('Tienda no autorizada')?'Esta tienda no pertenece a tu ruta o ya no está autorizada.':msg}
 }
 function toggleConditional(id,show,zeroName){const el=document.getElementById(id);el.classList.toggle('show',show);if(!show&&zeroName)setZero(zeroName)}
@@ -628,7 +640,7 @@ function collectAndValidate(){
 
 async function syncOneVisit(record){
   if(!navigator.onLine)return null;
-  const {data:{session}}=await sb.auth.getSession();if(!session)throw new Error('Necesitas iniciar sesión para sincronizar.');
+  const {data:{session}}=await sb.auth.getSession();if(!session)throw new Error('Necesitas iniciar sesión para enviar los registros pendientes.');
   const {data,error}=await sb.rpc('sincronizar_visita_v3',{
     p_client_visit_id:record.client_visit_id,p_id_tienda:record.id_tienda,
     p_hora_inicio_dispositivo:record.hora_inicio_dispositivo,p_lat:record.lat_entrada,p_lng:record.lng_entrada,
@@ -644,7 +656,7 @@ async function syncPending(manual=false){
     try{await syncOneVisit(record);await idbDelete('pending',record.client_visit_id);await delMeta('draft:'+record.client_visit_id);ok++}
     catch(e){console.warn('Pendiente no sincronizado',record.client_visit_id,e);if(!likelyNetworkError(e)){record.sync_error=(e&&e.message)||String(e);await idbPut('pending',record)}}
   }
-  await countPending();if(manual||ok)showToast(ok?`${ok} visita${ok===1?'':'s'} sincronizada${ok===1?'':'s'} correctamente.`:'No se pudieron sincronizar los registros todavía.',4000)
+  await countPending();if(manual||ok)showToast(ok?`${ok} visita${ok===1?'':'s'} sincronizada${ok===1?'':'s'} correctamente.`:'No se pudieron enviar los registros todavía.',4000)
 }
 async function submitLevantamiento(){
   if(!state.visitaActual){showToast('No hay una visita activa.');return}
@@ -657,17 +669,17 @@ async function submitLevantamiento(){
     await clearActiveVisit();
     resetForm();renderVisitState();await countPending();window.scrollTo({top:0,behavior:'smooth'});
     let synced=false,result=null;
-    if(navigator.onLine){try{result=await syncOneVisit(current);await idbDelete('pending',current.client_visit_id);await delMeta('draft:'+current.client_visit_id);synced=true}catch(e){console.warn('Se guardó localmente, pero falta sincronizar:',e)}}
+    if(navigator.onLine){try{result=await syncOneVisit(current);await idbDelete('pending',current.client_visit_id);await delMeta('draft:'+current.client_visit_id);synced=true}catch(e){console.warn('El registro quedó pendiente de envío:',e)}}
     await countPending();
     const duracion=result?.duracion_min!=null?Number(result.duracion_min):Math.max(0,Math.round((new Date(current.hora_fin_dispositivo)-new Date(current.hora_inicio_dispositivo))/60000));
-    showToast(synced?`Visita enviada y salida registrada · ${duracion} min`:`Visita guardada en el teléfono · ${duracion} min · pendiente de sincronizar`,5000);
+    showToast(synced?`Visita enviada y salida registrada · ${duracion} min`:`Visita registrada · ${duracion} min · pendiente de envío`,5000);
   }catch(e){console.error(e);showToast('No se pudo guardar la visita en el teléfono. No cierres esta pantalla e intenta nuevamente.',5500)}
   finally{btn.disabled=false;btn.textContent='Enviar respuestas y registrar salida'}
 }
 async function logout(){
   if(state.visitaActual&&!confirm('Tienes una visita en curso guardada en este teléfono. Si cierras sesión seguirá pendiente. ¿Continuar?'))return;
   const pending=await idbAll('pending');
-  if(pending.some(x=>x.codigo_promotor===state.promotor?.numero_empleado)&&!confirm('Hay visitas pendientes de sincronizar. No se borrarán, pero necesitarás volver a iniciar sesión para enviarlas. ¿Cerrar sesión?'))return;
+  if(pending.some(x=>x.codigo_promotor===state.promotor?.numero_empleado)&&!confirm('Hay visitas pendientes de envío. No se borrarán, pero necesitarás volver a iniciar sesión para enviarlas. ¿Cerrar sesión?'))return;
   try{if(navigator.onLine)await sb.auth.signOut()}catch(e){}
   await delMeta('profile');await delMeta('stores');await delMeta('keyword');
   state={promotor:null,tiendasRuta:[],visitaActual:null,offlineMode:false,pendingCount:0};resetForm();showScreen('screen-login');document.getElementById('input-pin').value='';
@@ -680,10 +692,10 @@ async function bootApp(){
     try{
       const {data:{session}}=await sb.auth.getSession();
       if(session){await cargarPerfilAutenticado();if(Array.isArray(cachedStores))state.tiendasRuta=cachedStores;await enterMain();return}
-    }catch(e){console.warn('Sesión online:',e);if(cachedProfile){state.promotor=cachedProfile;if(Array.isArray(cachedStores))state.tiendasRuta=cachedStores;state.offlineMode=true;await enterMain();showToast('Supabase no respondió. Continuando con los datos guardados.',4500);return}}
-  }else if(cachedProfile){state.promotor=cachedProfile;if(Array.isArray(cachedStores))state.tiendasRuta=cachedStores;state.offlineMode=true;await enterMain();showToast('Modo offline: usando tu ruta guardada en este teléfono.',4000);return}
+    }catch(e){console.warn('Sesión online:',e);if(cachedProfile){state.promotor=cachedProfile;if(Array.isArray(cachedStores))state.tiendasRuta=cachedStores;state.offlineMode=true;await enterMain();showToast('Sesión restaurada.',4500);return}}
+  }else if(cachedProfile){state.promotor=cachedProfile;if(Array.isArray(cachedStores))state.tiendasRuta=cachedStores;state.offlineMode=true;await enterMain();showToast('Sesión restaurada.',4000);return}
   showScreen('screen-login');
-  if(!navigator.onLine){const a=document.getElementById('alert-login');a.textContent='Sin conexión. Este dispositivo todavía no tiene una sesión y ruta guardadas.';a.classList.remove('hidden')}
+  if(!navigator.onLine){const a=document.getElementById('alert-login');a.textContent='No fue posible validar el acceso en este momento. Intenta nuevamente más tarde.';a.classList.remove('hidden')}
 }
 window.addEventListener('online',async()=>{renderSyncStatus();if(state.promotor){try{await syncPending(false);await cargarTiendasDeRuta();await cacheOperationalData()}catch(e){console.warn(e)}}});
 window.addEventListener('offline',()=>{state.offlineMode=true;renderSyncStatus()});

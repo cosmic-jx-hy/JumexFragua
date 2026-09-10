@@ -462,7 +462,7 @@ body{font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;ba
             </div>
             <div class="exec-metrics">
               <div class="exec-card-title" style="margin-bottom:3px">Indicadores operativos <span>Visitas del día</span></div>
-              <div class="exec-metric"><span>Capturas offline validadas</span><b id="ex-offline">0</b></div>
+              <div class="exec-metric"><span>Capturas con GPS validado</span><b id="ex-offline">0</b></div>
               <div class="exec-metric"><span>Duración promedio</span><b id="ex-duracion">—</b></div>
               <div class="exec-metric"><span>Visitas ≥ 40 min</span><b id="ex-40">—</b></div>
               <div class="exec-metric"><span>Capturas todo en cero</span><b id="ex-cero">0</b></div>
@@ -471,14 +471,14 @@ body{font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;ba
           </div>
 
           <div class="exec-alert" id="ex-observacion"><strong>Resumen:</strong> Sin información suficiente para generar observaciones.</div>
-          <div class="exec-sync-disclaimer">El reporte contabiliza únicamente capturas recibidas y validadas en Supabase al momento del corte. Una captura que todavía exista solo en el teléfono del promotor no es visible hasta sincronizarse.</div>
+          <div class="exec-sync-disclaimer">El reporte contabiliza únicamente capturas recibidas y validadas por el sistema al momento del corte.</div>
           <div class="exec-footer"><span>Fuente: Plataforma Jumex Fragua · Supabase</span><span id="ex-footer-meta">Meta teórica: 6 capturas por promotor activo</span></div>
         </div>
       </section>
 
       <section class="tab" id="tab-dashboard">
         <div class="page-head">
-          <div><h1>Resumen operativo</h1><p>Seguimiento en tiempo real de visitas recibidas, incluyendo capturas online y offline ya sincronizadas.</p></div>
+          <div><h1>Resumen operativo</h1><p>Seguimiento operativo de visitas, capturas recibidas y validaciones.</p></div>
           <div class="actions"><input type="date" id="dash-fecha" onchange="loadDashboard()" style="padding:8px 10px;border:1px solid var(--gray-200);border-radius:8px;background:#fff"></div>
         </div>
 
@@ -488,7 +488,7 @@ body{font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;ba
           <div class="stat"><div class="stat-value" id="st-cumplimiento">0%</div><div class="stat-label">Cumplimiento</div></div>
           <div class="stat"><div class="stat-value amber" id="st-abiertas">0</div><div class="stat-label">Visitas en curso</div></div>
           <div class="stat"><div class="stat-value red" id="st-sin-captura">0</div><div class="stat-label">Promotores sin captura</div></div>
-          <div class="stat"><div class="stat-value" id="st-offline">0</div><div class="stat-label">Capturas offline sincronizadas</div></div>
+          <div class="stat"><div class="stat-value" id="st-offline">0</div><div class="stat-label">Capturas con recepción diferida</div></div>
         </div>
 
         <div class="grid-2">
@@ -503,7 +503,7 @@ body{font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;ba
               <div class="metric-line"><span>Visitas de 40 min o más</span><span id="m-40">—</span></div>
               <div class="metric-line"><span>Levantamientos todo en cero</span><span id="m-cero">—</span></div>
               <div class="metric-line"><span>Distancia GPS promedio al ingreso</span><span id="m-distancia">—</span></div>
-              <div class="metric-line"><span>Retraso promedio de sincronización offline</span><span id="m-sync-delay">—</span></div>
+              <div class="metric-line"><span>Retraso promedio de recepción</span><span id="m-sync-delay">—</span></div>
             </div>
           </div>
         </div>
@@ -515,12 +515,12 @@ body{font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;ba
 
         <div class="table-wrap">
           <div class="table-title">Últimas capturas <small>Haz clic en Ver para revisar el levantamiento</small></div>
-          <table><thead><tr><th>Hora</th><th>Promotor</th><th>Ruta</th><th>Tienda</th><th>Duración</th><th>Origen</th><th>Sincronización</th><th>GPS</th><th>Todo cero</th><th></th></tr></thead><tbody id="tabla-recientes"></tbody></table>
+          <table><thead><tr><th>Hora</th><th>Promotor</th><th>Ruta</th><th>Tienda</th><th>Duración</th><th>Recepción</th><th>Recibida</th><th>GPS</th><th>Todo cero</th><th></th></tr></thead><tbody id="tabla-recientes"></tbody></table>
         </div>
       </section>
 
       <section class="tab" id="tab-visitas">
-        <div class="page-head"><div><h1>Visitas y capturas</h1><p>Consulta entradas, salidas, origen de captura, sincronización y validación GPS.</p></div></div>
+        <div class="page-head"><div><h1>Visitas y capturas</h1><p>Consulta entradas, salidas, recepción de registros y validación GPS.</p></div></div>
         <div class="filters">
           <div class="filter"><label>Desde</label><input type="date" id="vis-desde"></div>
           <div class="filter"><label>Hasta</label><input type="date" id="vis-hasta"></div>
@@ -528,12 +528,12 @@ body{font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;ba
           <div class="filter"><label>Ruta</label><select id="vis-ruta"><option value="">Todas</option></select></div>
           <div class="filter"><label>Promotor</label><select id="vis-promotor"><option value="">Todos</option></select></div>
           <div class="filter"><label>Estado</label><select id="vis-estado"><option value="">Todos</option><option value="COMPLETADA">Completada</option><option value="EN_VISITA">En curso</option></select></div>
-          <div class="filter"><label>Origen</label><select id="vis-origen"><option value="">Todos</option><option value="ONLINE">Online</option><option value="OFFLINE">Offline</option></select></div>
+          <div class="filter"><label>Recepción</label><select id="vis-origen"><option value="">Todas</option><option value="ONLINE">Directa</option><option value="OFFLINE">Diferida</option></select></div>
           <button class="btn btn-primary" onclick="loadVisitasPeriodo()">Consultar</button>
         </div>
         <div class="table-wrap">
           <div class="table-title">Registros <small id="vis-count">0 resultados</small></div>
-          <table><thead><tr><th>Fecha</th><th>Entrada</th><th>Salida</th><th>Promotor</th><th>Región</th><th>Ruta</th><th>Tienda</th><th>Duración</th><th>Origen</th><th>Sincronizada</th><th>GPS</th><th>Estado</th><th></th></tr></thead><tbody id="tabla-visitas"></tbody></table>
+          <table><thead><tr><th>Fecha</th><th>Entrada</th><th>Salida</th><th>Promotor</th><th>Región</th><th>Ruta</th><th>Tienda</th><th>Duración</th><th>Recepción</th><th>Recibida</th><th>GPS</th><th>Estado</th><th></th></tr></thead><tbody id="tabla-visitas"></tbody></table>
         </div>
       </section>
 
@@ -559,7 +559,7 @@ body{font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;ba
         <div class="page-head"><div><h1>Exportar</h1><p>Genera el levantamiento en formato compatible con la estructura BDD que utilizabas con Google Forms.</p></div></div>
         <div class="export-card">
           <h3>Reporte de levantamientos</h3>
-          <p>Incluye una hoja con las 33 columnas del formulario original, además de visitas con origen online/offline, hora de sincronización, validación GPS, cumplimiento por promotor y resumen por región.</p>
+          <p>Incluye una hoja con las 33 columnas del formulario original, además de visitas, hora de recepción, validación GPS, cumplimiento por promotor y resumen por región.</p>
           <div class="filters" style="border:0;padding:0;margin:0 0 12px">
             <div class="filter"><label>Desde</label><input type="date" id="exp-desde"></div>
             <div class="filter"><label>Hasta</label><input type="date" id="exp-hasta"></div>
@@ -755,8 +755,8 @@ function formatSyncDelay(min){
 }
 function originBadge(v){
   const m=visitMode(v);
-  if(m==='OFFLINE')return '<span class="badge badge-blue">Offline</span>';
-  if(m==='ONLINE')return '<span class="badge badge-green">Online</span>';
+  if(m==='OFFLINE')return '<span class="badge badge-blue">Diferida</span>';
+  if(m==='ONLINE')return '<span class="badge badge-green">Directa</span>';
   return '<span class="badge badge-gray">Anterior</span>';
 }
 function gpsValidation(v){
@@ -806,7 +806,7 @@ function renderExecutive(fecha,trendDesde){
   const zeros=lev.filter(l=>l.confirmado_todo_cero===true).length;
   const calidad=lev.length?pct(lev.length-zeros,lev.length):null;
   const completadas=vis.filter(v=>v.hora_fin);
-  const offline=completadas.filter(v=>visitMode(v)==='OFFLINE');
+  const offline=completadas.filter(v=>gpsValidation(v).ok===true);
   const durs=completadas.map(v=>Number(v.duracion_min)).filter(Number.isFinite);
   const avg=durs.length?durs.reduce((a,b)=>a+b,0)/durs.length:null;
   const c40=completadas.filter(v=>Number(v.duracion_min)>=40).length;
@@ -858,7 +858,7 @@ function renderExecutive(fecha,trendDesde){
   if(meta)notes.push(`cumplimiento nacional de <strong>${cump.toFixed(1)}%</strong> (${lev.length}/${meta})`);
   if(worstRegion&&regEntries.length>1)notes.push(`<strong>${escapeHtml(worstRegion.z)}</strong> presenta el menor avance con ${worstRegion.pc.toFixed(1)}%`);
   if(debajoMeta)notes.push(`<strong>${debajoMeta}</strong> promotor${debajoMeta===1?'':'es'} por debajo de la meta`);
-  if(offline.length)notes.push(`<strong>${offline.length}</strong> captura${offline.length===1?'':'s'} offline sincronizada${offline.length===1?'':'s'} y validada${offline.length===1?'':'s'}`);
+  if(offline.length)notes.push(`<strong>${offline.length}</strong> captura${offline.length===1?'':'s'} con ubicación validada`);
   if(zeros)notes.push(`<strong>${zeros}</strong> captura${zeros===1?'':'s'} marcada${zeros===1?'':'s'} como todo en cero`);
   document.getElementById('ex-observacion').innerHTML='<strong>Resumen:</strong> '+(notes.length?notes.join(' · ')+'.':'Sin incidencias relevantes para el corte seleccionado.');
   document.getElementById('ex-footer-meta').textContent=`Meta teórica: ${ops.length} promotores × ${META_DIARIA} = ${meta} capturas`;
@@ -1019,7 +1019,7 @@ function findLevantamiento(visitaId){return [...db.levantamientos,...db.dashLeva
 function findVisita(visitaId){return [...db.visitas,...db.dashVisitas].find(v=>Number(v.id)===Number(visitaId))}
 function showDetalle(id){
   const v=findVisita(id);if(!v){showToast('No se encontró la visita.');return}const l=findLevantamiento(id);
-  const delay=syncDelayMinutes(v);const general=`<div class="detail-grid"><div class="detail-box"><div class="detail-label">Promotor</div><div class="detail-value">${escapeHtml(v.nombre_promotor)} · ${escapeHtml(v.codigo_promotor)}</div></div><div class="detail-box"><div class="detail-label">Tienda</div><div class="detail-value">${escapeHtml(v.nombre_tienda)} · ID ${escapeHtml(v.id_tienda)}</div></div><div class="detail-box"><div class="detail-label">Entrada / salida</div><div class="detail-value">${fmtDateTime(v.hora_inicio_dispositivo||v.hora_inicio)} → ${fmtDateTime(v.hora_fin_dispositivo||v.hora_fin)}</div></div><div class="detail-box"><div class="detail-label">Duración</div><div class="detail-value">${v.duracion_min!=null?escapeHtml(v.duracion_min)+' min':'Visita abierta'}</div></div><div class="detail-box"><div class="detail-label">Ruta / región</div><div class="detail-value">${escapeHtml(v.ruta||'—')} · ${escapeHtml(v.region||'—')}</div></div><div class="detail-box"><div class="detail-label">GPS de entrada</div><div class="detail-value">Distancia ${v.distancia_entrada_m!=null?Math.round(Number(v.distancia_entrada_m))+' m':'—'} · Precisión ${v.precision_entrada_m!=null?Math.round(Number(v.precision_entrada_m))+' m':'—'} · ${gpsValidation(v).label}</div></div><div class="detail-box"><div class="detail-label">Origen de captura</div><div class="detail-value">${visitMode(v)}</div></div><div class="detail-box"><div class="detail-label">Sincronización</div><div class="detail-value">${v.sincronizado_at?fmtDateTime(v.sincronizado_at)+(visitMode(v)==='OFFLINE'&&delay!=null?' · retraso '+formatSyncDelay(delay):''):'Pendiente'}</div></div></div>`;
+  const delay=syncDelayMinutes(v);const general=`<div class="detail-grid"><div class="detail-box"><div class="detail-label">Promotor</div><div class="detail-value">${escapeHtml(v.nombre_promotor)} · ${escapeHtml(v.codigo_promotor)}</div></div><div class="detail-box"><div class="detail-label">Tienda</div><div class="detail-value">${escapeHtml(v.nombre_tienda)} · ID ${escapeHtml(v.id_tienda)}</div></div><div class="detail-box"><div class="detail-label">Entrada / salida</div><div class="detail-value">${fmtDateTime(v.hora_inicio_dispositivo||v.hora_inicio)} → ${fmtDateTime(v.hora_fin_dispositivo||v.hora_fin)}</div></div><div class="detail-box"><div class="detail-label">Duración</div><div class="detail-value">${v.duracion_min!=null?escapeHtml(v.duracion_min)+' min':'Visita abierta'}</div></div><div class="detail-box"><div class="detail-label">Ruta / región</div><div class="detail-value">${escapeHtml(v.ruta||'—')} · ${escapeHtml(v.region||'—')}</div></div><div class="detail-box"><div class="detail-label">GPS de entrada</div><div class="detail-value">Distancia ${v.distancia_entrada_m!=null?Math.round(Number(v.distancia_entrada_m))+' m':'—'} · Precisión ${v.precision_entrada_m!=null?Math.round(Number(v.precision_entrada_m))+' m':'—'} · ${gpsValidation(v).label}</div></div><div class="detail-box"><div class="detail-label">Tipo de recepción</div><div class="detail-value">${visitMode(v)}</div></div><div class="detail-box"><div class="detail-label">Recepción</div><div class="detail-value">${v.sincronizado_at?fmtDateTime(v.sincronizado_at)+(visitMode(v)==='OFFLINE'&&delay!=null?' · retraso '+formatSyncDelay(delay):''):'Pendiente'}</div></div></div>`;
   if(!l){document.getElementById('detalle-body').innerHTML=general+'<div class="help" style="margin-top:16px">Esta visita aún no tiene levantamiento asociado. Si está en curso, el promotor debe completar el formulario para registrar la salida.</div>';openModal('modal-detalle');return}
   const inv=(label,val)=>`<div class="inv"><b>${escapeHtml(label)}</b><span>${escapeHtml(val)}</span></div>`;
   document.getElementById('detalle-body').innerHTML=general+
@@ -1077,7 +1077,7 @@ async function exportarDatos(){
       'TIENES EXHIBICION ADICIONAL DE HYDROLIT? (EN MOSTRADOR, CAJAS, ARETEROS ETC.)':yn(l.hydrolit_exhibicion_adicional),'CUANTAS EXHIBICIONES ADICIONALES DE HYDROLIT?':l.hydrolit_cantidad_exhibiciones,
       'INVENTARIO TOTAL BLIST UVA':l.inventario_blist_uva,'INVENTARIO TOTAL BLIST LIMONADA ROSA':l.inventario_blist_limonada_rosa,'¿BLIST ESTA EN ANAQUEL?':yn(l.blist_anaquel),'¿CUANTOS FRENTES DE BLIST HAY EN ANAQUEL?':l.blist_frentes_anaquel,'¿BLIST ESTA EN REFRIGERADOR?':yn(l.blist_refrigerador),'¿CUANTOS FRENTES DE BLIST HAY EN REFRIGERADOR?':l.blist_frentes_refrigerador,'¿HAY EXHIBICIÓN ADICIONAL DE BLIST?':yn(l.blist_exhibicion_adicional),'¿CUANTAS EXHIBICIONES ADICIONALES DE BLIST HAY?':l.blist_cantidad_exhibiciones
     }});
-    const visitRows=vis.map(v=>({'ID visita':v.id,'Código':v.codigo_promotor,'Promotor':v.nombre_promotor,'Región':v.region,'Ruta':v.ruta,'ID tienda':v.id_tienda,'Tienda':v.nombre_tienda,'Fecha':fmtDate(v.hora_inicio_dispositivo||v.hora_inicio),'Entrada dispositivo':fmtTime(v.hora_inicio_dispositivo||v.hora_inicio),'Salida dispositivo':fmtTime(v.hora_fin_dispositivo||v.hora_fin),'Duración (min)':v.duracion_min,'Cumple ≥40 min':v.duracion_min!=null?(Number(v.duracion_min)>=40?'Sí':'No'):'—','Origen':visitMode(v),'Sincronizado en':v.sincronizado_at?fmtDateTime(v.sincronizado_at):'','Retraso sincronización':visitMode(v)==='OFFLINE'?formatSyncDelay(syncDelayMinutes(v)):'—','Distancia ingreso (m)':v.distancia_entrada_m!=null?Math.round(Number(v.distancia_entrada_m)):'','Precisión GPS (m)':v.precision_entrada_m!=null?Math.round(Number(v.precision_entrada_m)):'','Validación GPS servidor':gpsValidation(v).label,'Estado':v.hora_fin?'COMPLETADA':'EN_VISITA'}));
+    const visitRows=vis.map(v=>({'ID visita':v.id,'Código':v.codigo_promotor,'Promotor':v.nombre_promotor,'Región':v.region,'Ruta':v.ruta,'ID tienda':v.id_tienda,'Tienda':v.nombre_tienda,'Fecha':fmtDate(v.hora_inicio_dispositivo||v.hora_inicio),'Entrada dispositivo':fmtTime(v.hora_inicio_dispositivo||v.hora_inicio),'Salida dispositivo':fmtTime(v.hora_fin_dispositivo||v.hora_fin),'Duración (min)':v.duracion_min,'Cumple ≥40 min':v.duracion_min!=null?(Number(v.duracion_min)>=40?'Sí':'No'):'—','Origen':visitMode(v),'Recibido en':v.sincronizado_at?fmtDateTime(v.sincronizado_at):'','Retraso de recepción':visitMode(v)==='OFFLINE'?formatSyncDelay(syncDelayMinutes(v)):'—','Distancia ingreso (m)':v.distancia_entrada_m!=null?Math.round(Number(v.distancia_entrada_m)):'','Precisión GPS (m)':v.precision_entrada_m!=null?Math.round(Number(v.precision_entrada_m)):'','Validación GPS servidor':gpsValidation(v).label,'Estado':v.hora_fin?'COMPLETADA':'EN_VISITA'}));
     const days=[];let cur=new Date(`${desde}T00:00:00`),last=new Date(`${hasta}T00:00:00`);while(cur<=last){days.push(`${cur.getFullYear()}-${String(cur.getMonth()+1).padStart(2,'0')}-${String(cur.getDate()).padStart(2,'0')}`);cur.setDate(cur.getDate()+1)}
     const ops=db.promotores.filter(isOperativePromotor),cumRows=[];for(const day of days){for(const p of ops){const c=lev.filter(l=>l.codigo_promotor===p.numero_empleado&&new Date(l.marca_temporal).toLocaleDateString('en-CA')===day).length;cumRows.push({'Fecha':day,'Código':p.numero_empleado,'Promotor':p.nombre_completo,'Región':normalizedZone(p),'Ruta':p.ruta,'Capturas':c,'Meta':META_DIARIA,'Cumplimiento %':pct(c,META_DIARIA)})}}
     const regMap={};cumRows.forEach(r=>{const k=`${r['Fecha']}|${r['Región']}`;if(!regMap[k])regMap[k]={Fecha:r['Fecha'],Región:r['Región'],Capturas:0,Meta:0};regMap[k].Capturas+=r.Capturas;regMap[k].Meta+=r.Meta});const regRows=Object.values(regMap).map(r=>({...r,'Cumplimiento %':pct(r.Capturas,r.Meta)}));
