@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Admin V2 — Jumex Fragua</title>
+<title>Administración — Jumex Fragua</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
@@ -90,15 +90,267 @@ body.exec-capture{background:#fff}.exec-capture .sidebar,.exec-capture .topbar{d
 
 @media(max-width:1050px){.stats{grid-template-columns:repeat(3,1fr)}.grid-2{grid-template-columns:1fr}}
 @media(max-width:760px){:root{--sidebar:0px}.sidebar{display:none}.shell{margin-left:0}.main{padding:14px}.topbar{padding:0 14px}.keyword-admin{display:none}.stats{grid-template-columns:1fr 1fr}.page-head{align-items:flex-start;flex-direction:column}.detail-grid,.form-grid,.inventory-grid{grid-template-columns:1fr}.form-grid .full{grid-column:auto}.exec-kpis{grid-template-columns:1fr 1fr}.exec-grid,.exec-attention{grid-template-columns:1fr}.exec-report{padding:14px}.exec-header{flex-direction:column}.exec-status{text-align:left}}
+
+/* ============================================================
+   V3 VISUAL — dashboard ejecutivo / corporativo
+   Mantiene intacta la lógica, IDs, filtros, exportación y Auth.
+   ============================================================ */
+:root{
+  --brand:#148b64;--brand-2:#0c7656;--brand-dark:#075243;--brand-deep:#052f31;
+  --brand-light:#e9f8f2;--brand-mist:#f4fbf8;--blue:#2866df;--blue-light:#edf4ff;
+  --danger:#df4a4a;--danger-light:#fff0f0;--amber:#e59a18;--amber-light:#fff5df;
+  --gray-25:#fbfdfc;--gray-50:#f5f8f7;--gray-100:#edf2f0;--gray-200:#dfe7e3;
+  --gray-400:#86938d;--gray-600:#5e6c65;--gray-900:#11241d;--white:#fff;
+  --radius:15px;--sidebar:238px;--shadow:0 7px 24px rgba(5,47,49,.055);--shadow-sm:0 3px 13px rgba(5,47,49,.045);
+}
+body{font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#f1f6f4;color:#15271f}
+#login-overlay{background:radial-gradient(circle at 48% 20%,#eefaf5,#f3f7f5 45%,#eaf1ee)}.login-box{border:1px solid rgba(7,82,67,.08);border-radius:22px;box-shadow:0 24px 60px rgba(5,47,49,.11);padding:38px}.login-mark{background:linear-gradient(145deg,#dff5ec,#edf9f5);color:#0f8a62;border-radius:14px;box-shadow:inset 0 0 0 1px rgba(20,139,100,.08)}.login-box h1{font-size:23px;letter-spacing:-.5px}.login-box p{line-height:1.5}
+.field input,.field select,.filter input,.filter select{border-color:#dce5e1;border-radius:10px;background:#fbfdfc;transition:.15s}.field input:focus,.field select:focus,.filter input:focus,.filter select:focus{border-color:#62bca0;box-shadow:0 0 0 3px rgba(20,139,100,.08);background:#fff}
+.btn{border-radius:10px;transition:transform .12s,box-shadow .15s,opacity .15s}.btn:active{transform:scale(.985)}.btn-primary{background:linear-gradient(135deg,#168e67,#0d7657);box-shadow:0 5px 13px rgba(20,139,100,.18)}.btn-outline{border-color:#dce5e1;background:#fff}.btn-outline:hover{background:#f7faf8;opacity:1}
+.sidebar{background:linear-gradient(180deg,#073b3c 0,#062f32 55%,#052b2e 100%);border:0;padding:20px 14px;color:#fff;box-shadow:8px 0 28px rgba(5,47,49,.08)}
+.brand{display:flex;align-items:flex-start;gap:10px;padding:5px 8px 22px;color:#fff}.brand-symbol{width:34px;height:34px;border-radius:11px;background:linear-gradient(145deg,#1aa879,#0f855f);display:flex;align-items:center;justify-content:center;font-size:16px;color:#fff;box-shadow:0 5px 14px rgba(0,0,0,.12)}.brand-copy{display:flex;flex-direction:column;line-height:1}.brand-copy strong{font-size:18px;letter-spacing:-.5px}.brand-copy>span{font-size:10px;font-weight:800;letter-spacing:2.1px;margin-top:2px;color:#d8ece5}.brand-copy small{font-size:8px;line-height:1.35;letter-spacing:.2px;text-transform:none;color:#8db8aa;margin-top:8px}
+.nav{gap:4px}.nav-btn{display:flex;align-items:center;gap:10px;color:#c7ddd6;padding:10px 11px;border-radius:10px;font-size:12px;font-weight:600;transition:.14s}.nav-ico{width:18px;height:18px;display:inline-flex;align-items:center;justify-content:center;font-size:14px;color:#9bcabd}.nav-btn:hover{background:rgba(255,255,255,.055);color:#fff}.nav-btn:hover .nav-ico{color:#fff}.nav-btn.active{background:linear-gradient(90deg,#14946b,#10845f);color:#fff;box-shadow:0 5px 14px rgba(0,0,0,.12)}.nav-btn.active .nav-ico{color:#fff}
+.sidebar-foot{border-color:rgba(255,255,255,.08);padding-top:16px}.admin-email{color:#9ebeb4}.sidebar-foot .btn-outline{background:rgba(255,255,255,.04);border-color:rgba(255,255,255,.12);color:#d7e7e2}.sidebar-foot .btn-outline:hover{background:rgba(255,255,255,.09)}
+.shell{background:#f3f7f5}.topbar{height:68px;border-bottom:1px solid rgba(7,82,67,.06);background:rgba(255,255,255,.94);backdrop-filter:blur(10px);box-shadow:0 2px 12px rgba(5,47,49,.025);padding:0 26px}.top-title{font-size:17px;font-weight:820;letter-spacing:-.35px;color:#122a21}.top-sub{font-size:10px;color:#829089}.refresh-info{color:#93a099}.keyword-admin{background:#f5faf8;border-color:#dceae5;border-radius:12px;padding:5px 7px}.keyword-admin .kw-label{color:#538272}.keyword-admin input[type=date],.keyword-admin input[type=text]{border-color:#d7e6e0;background:#fff}.keyword-admin input[type=text]{color:#0a7253}
+.main{padding:24px 26px 32px;max-width:1550px}.page-head{margin-bottom:19px}.page-head h1{font-size:24px;font-weight:850;letter-spacing:-.7px;color:#10261e}.page-head p{font-size:11px;color:#718079}
+.filters{border-color:rgba(7,82,67,.075);border-radius:15px;box-shadow:var(--shadow-sm);padding:13px 14px;background:#fff}.filter label{color:#839089}
+.stats{gap:12px}.stat{position:relative;border-color:rgba(7,82,67,.07);border-radius:15px;padding:17px;box-shadow:var(--shadow-sm);overflow:hidden}.stat::before{content:'';position:absolute;left:0;right:0;top:0;height:3px;background:#dbe7e2}.stat:nth-child(1)::before{background:#14946b}.stat:nth-child(2)::before{background:#2b6ce0}.stat:nth-child(3)::before{background:#18a06e}.stat:nth-child(4)::before{background:#e59a18}.stat:nth-child(5)::before{background:#df4a4a}.stat-value{font-size:28px;font-weight:850;letter-spacing:-.9px}.stat-label{font-size:10px;color:#78867f;font-weight:600}
+.card,.table-wrap{border-color:rgba(7,82,67,.075);border-radius:15px;box-shadow:var(--shadow-sm)}.card-head{padding:14px 16px}.card-head h2,.table-title{font-size:12px;font-weight:800}.card-body{padding:15px 16px}.region-row{padding:11px 0}.progress{height:8px;background:#eaf0ed}.progress>span{background:linear-gradient(90deg,#17a474,#0e805d)}
+.table-wrap{background:#fff}.table-title{padding:14px 16px}.table-title small{color:#8c9892}table{font-size:11px}th{background:#f6f9f8;color:#7d8a84;font-size:9px;padding:10px 12px}td{padding:11px 12px}tbody tr:hover td{background:#f7fbf9}.badge{padding:4px 8px;font-size:9px}.badge-green{background:#e7f8f0;color:#087251}.badge-amber{background:#fff3d8;color:#9a6300}.badge-red{background:#fff0f0;color:#a52e2e}.badge-gray{background:#eef2f0;color:#66736d}
+.modal{border-radius:20px;box-shadow:0 26px 70px rgba(5,47,49,.2)}.modal-head{padding:19px 21px}.modal-close{background:#eef3f1;color:#4d5e56}.detail-box{background:#f6f9f8;border:1px solid #edf2f0}.inv{border-color:#dfe8e4;border-radius:11px}.section-label{color:#0d7657}
+/* Reporte ejecutivo */
+.exec-report{border-color:rgba(7,82,67,.075);border-radius:18px;padding:20px;box-shadow:0 10px 32px rgba(5,47,49,.065);background:linear-gradient(180deg,#fff 0,#fdfefe 100%)}
+.exec-header{padding-bottom:14px;margin-bottom:14px;border-color:#e9efec}.exec-brand{font-size:12px;letter-spacing:.4px;color:#0c6f52}.exec-brand b{font-size:15px;font-weight:900;letter-spacing:-.3px}.exec-brand span{font-weight:800;letter-spacing:1.4px;font-size:9px;color:#47977c}.exec-eyebrow{color:#8a9791}.exec-title{font-size:24px;letter-spacing:-.75px;color:#102820}.exec-date{color:#697770}.exec-status{background:#f4f8f6;border:1px solid #e4ebe8;border-radius:10px;padding:8px 10px}.exec-status .cut{font-size:8px}.exec-status .time{color:#12362a}
+.exec-kpis{gap:11px}.exec-kpi{position:relative;border-color:#e0e9e5;border-radius:14px;padding:14px 15px;min-height:96px;box-shadow:0 3px 11px rgba(5,47,49,.035);overflow:hidden}.exec-kpi::after{content:'';position:absolute;left:14px;right:14px;bottom:10px;height:5px;border-radius:8px;background:#eaf0ed}.exec-kpi:nth-child(2)::after{background:linear-gradient(90deg,#2a6be0 0 64%,#e8edf1 64%)}.exec-kpi:nth-child(3)::after{background:linear-gradient(90deg,#18a06e 0 72%,#e8edf1 72%)}.exec-kpi:nth-child(4)::after{background:linear-gradient(90deg,#e59a18 0 82%,#e8edf1 82%)}.exec-kpi.primary{background:linear-gradient(145deg,#118c63,#087653);border:0;color:#fff;box-shadow:0 10px 22px rgba(13,118,87,.18)}.exec-kpi.primary::after{background:rgba(255,255,255,.2)}.exec-kpi.primary .exec-kpi-value,.exec-kpi.primary .exec-kpi-label,.exec-kpi.primary .exec-kpi-sub{color:#fff}.exec-kpi-value{font-size:30px;font-weight:900}.exec-kpi-label{font-size:9px;font-weight:800;color:#52615a}.exec-kpi-sub{font-size:8px;color:#87948e;margin-bottom:8px}
+.exec-grid{grid-template-columns:.92fr 1.08fr;gap:12px}.exec-card,.exec-list,.exec-metrics{border-color:#e1e9e6;border-radius:14px;box-shadow:0 3px 12px rgba(5,47,49,.035)}.exec-card{padding:14px 15px;background:#fff}.exec-card-title{font-size:10px;color:#1a3027}.exec-region{padding:11px 0}.exec-region-track{height:8px;background:#edf2f0}.exec-region-fill{background:linear-gradient(90deg,#15a574,#0f825e)}.exec-region-pct{font-size:14px}.exec-trend-line{stroke:#138b64;stroke-width:2.8}.exec-trend-dot{stroke:#138b64}.exec-grid-line{stroke:#e7eeeb}.exec-list-head{background:#f5f8f7}.exec-list-row{font-size:9px}.exec-metric{padding:8px 0}.exec-alert{background:linear-gradient(90deg,#eef9f5,#f7fbf9);border-left-color:#139268;border-radius:10px;color:#5c6c64}.exec-footer{color:#94a09a}
+/* colores semánticos conservados */
+.green{color:#11825e}.red{color:#d74242}.amber{color:#cc8100}
+@media(max-width:1050px){.sidebar{box-shadow:none}}
+@media(max-width:760px){.sidebar{display:none}.shell{margin-left:0}.topbar{height:auto;min-height:62px;padding:10px 14px}.main{padding:16px 14px}.exec-report{border-radius:15px}.exec-kpi{min-height:90px}.keyword-admin{display:none}}
+@media print{body.print-executive .exec-kpi.primary{-webkit-print-color-adjust:exact;print-color-adjust:exact;background:#118c63!important;color:#fff!important}body.print-executive .exec-report{background:#fff!important}}
+
+
+/* ============================================================
+   V3 CLEAN — versión más sobria, sin símbolos/logos genéricos.
+   Solo ajustes visuales. No modifica Supabase ni la lógica.
+   ============================================================ */
+#login-overlay{
+  background:linear-gradient(180deg,#f5f8f7 0%,#eef3f1 100%);
+}
+.admin-login-clean{
+  width:390px;
+  border:1px solid #dfe7e3;
+  border-radius:18px;
+  padding:30px;
+  box-shadow:0 14px 36px rgba(5,47,49,.075);
+}
+.admin-login-brand{
+  display:flex;
+  align-items:baseline;
+  gap:7px;
+  margin-bottom:24px;
+}
+.admin-login-brand strong{
+  color:var(--brand-dark);
+  font-size:22px;
+  line-height:1;
+  font-weight:900;
+  letter-spacing:-.8px;
+}
+.admin-login-brand span{
+  color:#7c8983;
+  font-size:12px;
+  line-height:1;
+  font-weight:800;
+  letter-spacing:1.5px;
+}
+.admin-login-clean h1{
+  color:#142820;
+  font-size:22px;
+  font-weight:850;
+  letter-spacing:-.45px;
+  margin-bottom:6px;
+}
+.admin-login-clean p{
+  color:#7c8983;
+  font-size:12px;
+  line-height:1.45;
+  margin-bottom:22px;
+}
+.admin-login-clean .field label{
+  color:#58675f;
+  font-weight:700;
+}
+.admin-login-clean .field input{
+  min-height:46px;
+  border-radius:11px;
+  border-color:#dce5e1;
+  background:#fbfdfc;
+}
+.admin-login-clean .field input:focus{
+  border-color:#56b99a;
+  box-shadow:0 0 0 4px rgba(18,134,95,.08);
+}
+.admin-login-clean .btn-primary{
+  min-height:46px;
+  border-radius:11px;
+  background:var(--brand-dark);
+  box-shadow:none;
+}
+
+/* Sidebar: misma paleta, menos decorativo */
+.sidebar{
+  background:var(--brand-dark);
+  box-shadow:none;
+  padding:22px 14px 18px;
+}
+.brand-clean{
+  min-height:64px;
+  padding:2px 10px 20px;
+  display:flex;
+  align-items:flex-start;
+  border-bottom:1px solid rgba(255,255,255,.08);
+  margin-bottom:14px;
+}
+.brand-clean .brand-copy{
+  display:flex;
+  align-items:baseline;
+  flex-direction:row;
+  gap:6px;
+}
+.brand-clean .brand-copy strong{
+  color:#fff;
+  font-size:19px;
+  font-weight:900;
+  letter-spacing:-.7px;
+}
+.brand-clean .brand-copy>span{
+  color:#b9d6cd;
+  font-size:10px;
+  font-weight:800;
+  letter-spacing:1.6px;
+  margin:0;
+}
+.brand-clean .brand-copy small,
+.brand-symbol{
+  display:none!important;
+}
+
+.nav{
+  gap:3px;
+}
+.nav-btn{
+  position:relative;
+  display:block;
+  padding:10px 12px 10px 15px;
+  color:#c4d9d3;
+  border-radius:9px;
+  font-size:12px;
+  font-weight:650;
+}
+.nav-btn:hover{
+  background:rgba(255,255,255,.055);
+  color:#fff;
+}
+.nav-btn.active{
+  background:rgba(255,255,255,.10);
+  color:#fff;
+  box-shadow:none;
+}
+.nav-btn.active::before{
+  content:'';
+  position:absolute;
+  left:0;
+  top:8px;
+  bottom:8px;
+  width:3px;
+  border-radius:5px;
+  background:#53d0a5;
+}
+.nav-ico{
+  display:none!important;
+}
+
+/* Shell / topbar */
+.shell{
+  background:#f4f7f6;
+}
+.topbar{
+  height:66px;
+  padding:0 26px;
+  background:#fff;
+  border-bottom:1px solid #e5ebe8;
+  box-shadow:none;
+  backdrop-filter:none;
+}
+.top-title{
+  color:#183027;
+  font-size:16px;
+  font-weight:800;
+}
+.top-sub{
+  color:#87938d;
+  font-size:10px;
+}
+.keyword-admin{
+  background:#f7faf8;
+  border-color:#dfe8e4;
+  box-shadow:none;
+}
+.main{
+  padding:24px 26px 34px;
+}
+
+/* Cards: menos efectos, más reporte corporativo */
+.card,.table-wrap,.filters,.stat{
+  box-shadow:none;
+  border-color:#e0e8e4;
+}
+.stat{
+  border-radius:13px;
+}
+.stat::before{
+  height:2px;
+}
+.exec-report{
+  box-shadow:none;
+  border-color:#dfe7e3;
+  background:#fff;
+}
+.exec-kpi,.exec-card,.exec-list,.exec-metrics{
+  box-shadow:none;
+}
+.exec-kpi.primary{
+  background:var(--brand-dark);
+  box-shadow:none;
+}
+.exec-brand{
+  display:flex;
+  align-items:baseline;
+  gap:5px;
+}
+.exec-brand b{
+  color:var(--brand-dark);
+  font-size:15px;
+  font-weight:900;
+  letter-spacing:-.4px;
+}
+.exec-brand span{
+  color:#6f8078;
+  font-size:9px;
+  font-weight:800;
+  letter-spacing:1.4px;
+}
+
 </style>
 </head>
 <body>
 
 <div id="login-overlay">
-  <div class="login-box">
-    <div class="login-mark">✦</div>
+  <div class="login-box admin-login-clean">
+    <div class="admin-login-brand"><strong>JUMEX</strong><span>FRAGUA</span></div>
     <h1>Panel de administración</h1>
-    <p>Jumex Fragua · Acceso exclusivo para administradores autorizados.</p>
+    <p>Acceso al sistema de operación y levantamientos.</p>
     <div class="field"><label>Correo</label><input type="email" id="login-user" autocomplete="username" placeholder="admin@dominio.com"></div>
     <div class="field"><label>Contraseña</label><input type="password" id="login-pass" autocomplete="current-password" placeholder="••••••••"></div>
     <div class="login-error" id="login-err"></div>
@@ -108,14 +360,14 @@ body.exec-capture{background:#fff}.exec-capture .sidebar,.exec-capture .topbar{d
 
 <div id="app">
   <aside class="sidebar">
-    <div class="brand">Jumex <span>Fragua</span><small>Administración V2</small></div>
+    <div class="brand brand-clean"><div class="brand-copy"><strong>JUMEX</strong><span>FRAGUA</span></div></div>
     <nav class="nav">
       <button class="nav-btn active" data-tab="ejecutivo" onclick="switchTab('ejecutivo',this)">Reporte ejecutivo</button>
       <button class="nav-btn" data-tab="dashboard" onclick="switchTab('dashboard',this)">Resumen operativo</button>
       <button class="nav-btn" data-tab="visitas" onclick="switchTab('visitas',this)">Visitas y capturas</button>
       <button class="nav-btn" data-tab="promotores" onclick="switchTab('promotores',this)">Promotores</button>
       <button class="nav-btn" data-tab="tiendas" onclick="switchTab('tiendas',this)">Tiendas</button>
-      <button class="nav-btn" data-tab="exportar" onclick="switchTab('exportar',this)">Exportar</button>
+      <button class="nav-btn" data-tab="exportar" onclick="switchTab('exportar',this)">Exportar datos</button>
     </nav>
     <div class="sidebar-foot">
       <div class="admin-email" id="admin-email">—</div>
@@ -153,7 +405,7 @@ body.exec-capture{background:#fff}.exec-capture .sidebar,.exec-capture .topbar{d
         <div class="exec-report" id="exec-report">
           <div class="exec-header">
             <div>
-              <div class="exec-brand">Jumex <span>Fragua</span></div>
+              <div class="exec-brand"><b>JUMEX</b> <span>FRAGUA</span></div>
               <div class="exec-eyebrow">Operación nacional · Promotoría en campo</div>
               <div class="exec-title">Reporte Ejecutivo de Promotoría</div>
               <div class="exec-date" id="exec-date-label">—</div>
