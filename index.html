@@ -320,15 +320,18 @@ async function getMeta(key){const row=await idbGet('meta',key);return row?row.va
 async function delMeta(key){return idbDelete('meta',key)}
 function uuidv4(){if(crypto.randomUUID)return crypto.randomUUID();return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,c=>{const r=Math.random()*16|0,v=c==='x'?r:(r&3|8);return v.toString(16)})}
 function likelyNetworkError(e){const s=String((e&&e.message)||e||'').toLowerCase();return !navigator.onLine||s.includes('failed to fetch')||s.includes('network')||s.includes('timeout')||s.includes('load failed')||s.includes('connection')}
+function storesCacheKey(){
+  return state.promotor?.numero_empleado ? `stores:${state.promotor.numero_empleado}` : 'stores';
+}
 async function cacheOperationalData(){
   if(state.promotor)await setMeta('profile',state.promotor);
-  if(state.tiendasRuta.length)await setMeta('stores',state.tiendasRuta);
+  if(state.promotor)await setMeta(storesCacheKey(),state.tiendasRuta);
   await setMeta('last_operational_sync',new Date().toISOString());
   try{if(navigator.storage&&navigator.storage.persist)await navigator.storage.persist()}catch(e){}
 }
 async function loadCachedOperationalData(){
   const profile=await getMeta('profile');
-  const stores=await getMeta('stores');
+  const stores=await getMeta(storesCacheKey());
   if(profile)state.promotor=profile;
   if(Array.isArray(stores))state.tiendasRuta=stores;
   return !!(state.promotor&&state.tiendasRuta.length);
@@ -476,39 +479,37 @@ async function cargarPalabraClaveHoy(){
 }
 async function cargarTiendasDeRuta(){
   const p=state.promotor,esSupervisor=isSupervisor();
+  const cacheKey=storesCacheKey();
+
   if(navigator.onLine){
     try{
-      let q=sb.from('tiendas').select('id,id_tienda,nombre_tienda,cadena,lat,lng,ruta,zona,ciudad,estado').eq('activa',true);
-      if(esSupervisor){
-        const zona=String(p.zona||'').trim();
-        if(!zona)throw new Error('El perfil de supervisión no tiene región/zona asignada.');
-        q=q.ilike('zona',zona);
-      }else{
-        if(!p.ruta)throw new Error('Sin ruta');
-        q=q.ilike('ruta',p.ruta.trim());
-      }
-      const {data,error}=await q.order('ruta',{ascending:true}).order('nombre_tienda',{ascending:true});
+      const {data,error}=await sb.rpc('mis_tiendas');
       if(error)throw error;
-      state.tiendasRuta=data||[];
-      await setMeta('stores',state.tiendasRuta);
+
+      state.tiendasRuta=Array.isArray(data)?data:[];
+      await setMeta(cacheKey,state.tiendasRuta);
     }catch(e){
       console.warn('Tiendas:',e);
-      const c=await getMeta('stores');
+      const c=await getMeta(cacheKey);
       if(Array.isArray(c))state.tiendasRuta=c;
+      else state.tiendasRuta=[];
     }
   }else{
-    const c=await getMeta('stores');
+    const c=await getMeta(cacheKey);
     if(Array.isArray(c))state.tiendasRuta=c;
   }
 
   if(esSupervisor){
-    const rutas=[...new Set(state.tiendasRuta.map(t=>String(t.ruta||'').trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'es',{numeric:true}));
-    if(state.supervisorRutaSeleccionada&&!rutas.includes(state.supervisorRutaSeleccionada))state.supervisorRutaSeleccionada='';
+    const rutas=[...new Set(state.tiendasRuta.map(t=>String(t.ruta||'').trim()).filter(Boolean))]
+      .sort((a,b)=>a.localeCompare(b,'es',{numeric:true}));
+    if(state.supervisorRutaSeleccionada&&!rutas.includes(state.supervisorRutaSeleccionada)){
+      state.supervisorRutaSeleccionada='';
+    }
     document.getElementById('sheet-route').textContent=`Región ${supervisorRegionLabel()} · ${rutas.length} rutas`;
     setupSupervisorRouteSelector(rutas);
   }else{
     state.supervisorRutaSeleccionada='';
-    document.getElementById('sheet-route').textContent=`Ruta ${p.ruta||'—'}`;
+    document.getElementById('sheet-route').textContent=`Ruta ${p.ruta||'—'} · ${state.tiendasRuta.length} tiendas`;
     setupSupervisorRouteSelector([]);
   }
 }
@@ -767,19 +768,45 @@ async function logout(){
   const pending=await idbAll('pending');
   if(pending.some(x=>x.codigo_promotor===state.promotor?.numero_empleado)&&!confirm('Hay visitas pendientes de envío. No se borrarán, pero necesitarás volver a iniciar sesión para enviarlas. ¿Cerrar sesión?'))return;
   try{if(navigator.onLine)await sb.auth.signOut()}catch(e){}
-  await delMeta('profile');await delMeta('stores');await delMeta('keyword');
+  const storeKey=storesCacheKey();await delMeta('profile');await delMeta(storeKey);await delMeta('keyword');
   state={promotor:null,tiendasRuta:[],visitaActual:null,offlineMode:false,pendingCount:0,supervisorRutaSeleccionada:''};resetForm();showScreen('screen-login');document.getElementById('input-pin').value='';
 }
 async function bootApp(){
   await registerOfflineApp();
   try{await openOfflineDB()}catch(e){console.error('IndexedDB:',e)}
-  const cachedProfile=await getMeta('profile').catch(()=>null),cachedStores=await getMeta('stores').catch(()=>null);
+  const cachedProfile=await getMeta('profile').catch(()=>null);
+  const cachedStores=cachedProfile
+    ? await getMeta(`stores:${cachedProfile.numero_empleado}`).catch(()=>null)
+    : null;
   if(navigator.onLine){
     try{
       const {data:{session}}=await sb.auth.getSession();
-      if(session){await cargarPerfilAutenticado();if(Array.isArray(cachedStores))state.tiendasRuta=cachedStores;await enterMain();return}
-    }catch(e){console.warn('Sesión online:',e);if(cachedProfile){state.promotor=cachedProfile;if(Array.isArray(cachedStores))state.tiendasRuta=cachedStores;state.offlineMode=true;await enterMain();showToast('Sesión restaurada.',4500);return}}
-  }else if(cachedProfile){state.promotor=cachedProfile;if(Array.isArray(cachedStores))state.tiendasRuta=cachedStores;state.offlineMode=true;await enterMain();showToast('Sesión restaurada.',4000);return}
+      if(session){
+        await cargarPerfilAutenticado();
+        const currentCached=await getMeta(storesCacheKey()).catch(()=>null);
+        if(Array.isArray(currentCached))state.tiendasRuta=currentCached;
+        await enterMain();
+        return;
+      }
+    }catch(e){
+      console.warn('Sesión online:',e);
+      if(cachedProfile){
+        state.promotor=cachedProfile;
+        if(Array.isArray(cachedStores))state.tiendasRuta=cachedStores;
+        state.offlineMode=true;
+        await enterMain();
+        showToast('Sesión restaurada.',4500);
+        return;
+      }
+    }
+  }else if(cachedProfile){
+    state.promotor=cachedProfile;
+    if(Array.isArray(cachedStores))state.tiendasRuta=cachedStores;
+    state.offlineMode=true;
+    await enterMain();
+    showToast('Sesión restaurada.',4000);
+    return;
+  }
   showScreen('screen-login');
   if(!navigator.onLine){const a=document.getElementById('alert-login');a.textContent='No fue posible validar el acceso en este momento. Intenta nuevamente más tarde.';a.classList.remove('hidden')}
 }

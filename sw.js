@@ -1,4 +1,4 @@
-const CACHE_NAME = 'jumex-fragua-v4-offline-1';
+const CACHE_NAME = 'jumex-fragua-v5-1';
 const APP_SHELL = [
   './',
   './index.html',
