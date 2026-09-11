@@ -122,6 +122,12 @@ input:focus,select:focus,textarea:focus{border-color:#56b99a;background:#fff;box
 .pending-note{margin-top:8px;padding:8px 10px;border-radius:10px;background:#fff7e7;color:#7a5c16;font-size:10px;line-height:1.4}
 .header-logo{gap:5px}.brand-leaf{display:none!important}
 
+
+.supervisor-route-filter{margin:0 0 10px}
+.supervisor-route-filter label{display:block;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.55px;color:#66746d;margin:0 0 6px 2px}
+.supervisor-route-filter select{width:100%;min-height:46px;border:1px solid #dfe7e3;border-radius:13px;background:#f7faf8;padding:0 14px;font:inherit;font-size:13px;font-weight:750;color:#183d35;outline:none}
+.supervisor-route-filter select:focus{border-color:#63b99d;background:#fff;box-shadow:0 0 0 3px rgba(51,157,122,.10)}
+
 </style>
 </head>
 <body>
@@ -181,7 +187,7 @@ input:focus,select:focus,textarea:focus{border-color:#56b99a;background:#fff;box
 
     <div class="card visit-hero" id="card-new-visit">
       <h2>Registrar visita</h2>
-      <p>Selecciona una tienda de tu ruta. La ubicación se valida en el teléfono y funciona incluso sin datos móviles.</p>
+      <p>Selecciona una tienda para registrar la visita. La ubicación será validada antes de iniciar.</p>
       <button class="btn" onclick="openStoreSheet()">+ Registrar visita</button>
     </div>
 
@@ -255,6 +261,12 @@ input:focus,select:focus,textarea:focus{border-color:#56b99a;background:#fff;box
 <div class="modal-bg" id="store-modal">
   <div class="sheet">
     <div class="sheet-head"><div><h2>Selecciona la tienda</h2><div class="small muted" id="sheet-route">—</div></div><button class="close" onclick="closeStoreSheet()">×</button></div>
+    <div class="supervisor-route-filter hidden" id="supervisor-route-wrap">
+      <label for="supervisor-route-select">Ruta</label>
+      <select id="supervisor-route-select" onchange="onSupervisorRouteChange(this.value)">
+        <option value="">Selecciona una ruta</option>
+      </select>
+    </div>
     <input class="store-search" id="store-search" placeholder="Buscar por nombre o ID" oninput="renderStores(this.value)">
     <div class="store-list" id="store-list"></div>
     <div class="gps-box alert alert-info" id="gps-box"></div>
@@ -281,7 +293,7 @@ const OFFLINE_DB_VERSION=1;
 const BEST_GPS_WINDOW_MS=10000;
 const BEST_GPS_TARGET_M=30;
 
-let state={promotor:null,tiendasRuta:[],visitaActual:null,offlineMode:false,pendingCount:0};
+let state={promotor:null,tiendasRuta:[],visitaActual:null,offlineMode:false,pendingCount:0,supervisorRutaSeleccionada:''};
 let offlineDbPromise=null;
 
 
@@ -433,11 +445,20 @@ async function enterMain(){
   if(state.visitaActual){await restoreDraft()}
   await countPending();renderSyncStatus();
 }
+function isSupervisor(){
+  return String(state.promotor?.rol||'promotor').toLowerCase()==='supervisor';
+}
+function supervisorRegionLabel(){
+  const p=state.promotor||{};
+  return p.region||p.zona||'—';
+}
 function renderUser(){
   const p=state.promotor;
   document.getElementById('avatar').textContent=initials(p.nombre_completo);
   document.getElementById('user-name').textContent=p.nombre_completo;
-  document.getElementById('user-meta').textContent=`Empleado ${p.numero_empleado} · Ruta ${p.ruta||'—'} · ${p.region||p.zona||'—'}`;
+  document.getElementById('user-meta').textContent=isSupervisor()
+    ? `Empleado ${p.numero_empleado} · Supervisor · Región ${supervisorRegionLabel()}`
+    : `Empleado ${p.numero_empleado} · Ruta ${p.ruta||'—'} · ${p.region||p.zona||'—'}`;
 }
 
 async function cargarPalabraClaveHoy(){
@@ -454,17 +475,42 @@ async function cargarPalabraClaveHoy(){
   else{word.textContent='—';card.classList.remove('show')}
 }
 async function cargarTiendasDeRuta(){
-  const p=state.promotor,esSupervisor=(p.rol||'').toLowerCase()==='supervisor';
+  const p=state.promotor,esSupervisor=isSupervisor();
   if(navigator.onLine){
     try{
       let q=sb.from('tiendas').select('id,id_tienda,nombre_tienda,cadena,lat,lng,ruta,zona,ciudad,estado').eq('activa',true);
-      if(esSupervisor){if(!p.zona)throw new Error('Sin zona');q=q.ilike('zona',p.zona.trim())}
-      else{if(!p.ruta)throw new Error('Sin ruta');q=q.ilike('ruta',p.ruta.trim())}
-      const {data,error}=await q.order('nombre_tienda',{ascending:true});if(error)throw error;
-      state.tiendasRuta=data||[];await setMeta('stores',state.tiendasRuta);
-    }catch(e){console.warn('Tiendas online:',e);const c=await getMeta('stores');if(Array.isArray(c))state.tiendasRuta=c}
-  }else{const c=await getMeta('stores');if(Array.isArray(c))state.tiendasRuta=c}
-  document.getElementById('sheet-route').textContent=esSupervisor?`Zona ${p.zona||'—'}`:`Ruta ${p.ruta||'—'}`;
+      if(esSupervisor){
+        const zona=String(p.zona||'').trim();
+        if(!zona)throw new Error('El perfil de supervisión no tiene región/zona asignada.');
+        q=q.ilike('zona',zona);
+      }else{
+        if(!p.ruta)throw new Error('Sin ruta');
+        q=q.ilike('ruta',p.ruta.trim());
+      }
+      const {data,error}=await q.order('ruta',{ascending:true}).order('nombre_tienda',{ascending:true});
+      if(error)throw error;
+      state.tiendasRuta=data||[];
+      await setMeta('stores',state.tiendasRuta);
+    }catch(e){
+      console.warn('Tiendas:',e);
+      const c=await getMeta('stores');
+      if(Array.isArray(c))state.tiendasRuta=c;
+    }
+  }else{
+    const c=await getMeta('stores');
+    if(Array.isArray(c))state.tiendasRuta=c;
+  }
+
+  if(esSupervisor){
+    const rutas=[...new Set(state.tiendasRuta.map(t=>String(t.ruta||'').trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'es',{numeric:true}));
+    if(state.supervisorRutaSeleccionada&&!rutas.includes(state.supervisorRutaSeleccionada))state.supervisorRutaSeleccionada='';
+    document.getElementById('sheet-route').textContent=`Región ${supervisorRegionLabel()} · ${rutas.length} rutas`;
+    setupSupervisorRouteSelector(rutas);
+  }else{
+    state.supervisorRutaSeleccionada='';
+    document.getElementById('sheet-route').textContent=`Ruta ${p.ruta||'—'}`;
+    setupSupervisorRouteSelector([]);
+  }
 }
 async function reconcileOpenVisit(){
   if(!navigator.onLine||!state.promotor)return;
@@ -492,20 +538,60 @@ function renderVisitState(){
   }
 }
 
+function setupSupervisorRouteSelector(rutas=[]){
+  const wrap=document.getElementById('supervisor-route-wrap');
+  const select=document.getElementById('supervisor-route-select');
+  if(!wrap||!select)return;
+
+  if(!isSupervisor()){
+    wrap.classList.add('hidden');
+    select.innerHTML='<option value="">Selecciona una ruta</option>';
+    return;
+  }
+
+  wrap.classList.remove('hidden');
+  select.innerHTML='<option value="">Selecciona una ruta</option>'+rutas.map(r=>`<option value="${escapeHtml(r)}">${escapeHtml(r)}</option>`).join('');
+  select.value=state.supervisorRutaSeleccionada||'';
+}
+function onSupervisorRouteChange(ruta){
+  state.supervisorRutaSeleccionada=String(ruta||'');
+  document.getElementById('store-search').value='';
+  renderStores('');
+}
 function openStoreSheet(){
   if(state.visitaActual){showToast('Primero debes terminar la visita actual.');return}
   document.getElementById('store-modal').classList.add('show');
   document.getElementById('store-search').value='';
   document.getElementById('gps-box').classList.remove('show');
+
+  if(isSupervisor()){
+    const rutas=[...new Set(state.tiendasRuta.map(t=>String(t.ruta||'').trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'es',{numeric:true}));
+    setupSupervisorRouteSelector(rutas);
+  }else{
+    setupSupervisorRouteSelector([]);
+  }
   renderStores('');
 }
 function closeStoreSheet(){document.getElementById('store-modal').classList.remove('show')}
 
 function renderStores(q=''){
   const needle=q.trim().toLowerCase();
-  const items=state.tiendasRuta.filter(t=>`${t.nombre_tienda||''} ${t.id_tienda||''}`.toLowerCase().includes(needle));
+  let items=state.tiendasRuta;
+
+  if(isSupervisor()){
+    const ruta=state.supervisorRutaSeleccionada;
+    if(!ruta){
+      document.getElementById('store-list').innerHTML='<div class="empty">Selecciona una ruta para ver sus tiendas.</div>';
+      return;
+    }
+    items=items.filter(t=>String(t.ruta||'')===ruta);
+  }
+
+  items=items.filter(t=>`${t.nombre_tienda||''} ${t.id_tienda||''}`.toLowerCase().includes(needle));
   const list=document.getElementById('store-list');
-  list.innerHTML=items.length?items.map(t=>`<div class="store-item" onclick="startVisit('${String(t.id_tienda).replace(/'/g,"\\'")}')"><div class="store-name">${escapeHtml(t.nombre_tienda||t.cadena||'Tienda')}</div><div class="store-meta">ID ${escapeHtml(String(t.id_tienda||'—'))} · Ruta ${escapeHtml(String(t.ruta||'—'))}</div></div>`).join(''):'<div class="empty">No se encontraron tiendas.</div>';
+  list.innerHTML=items.length
+    ?items.map(t=>`<div class="store-item" onclick="startVisit('${String(t.id_tienda).replace(/'/g,"\\'")}')"><div class="store-name">${escapeHtml(t.nombre_tienda||t.cadena||'Tienda')}</div><div class="store-meta">ID ${escapeHtml(String(t.id_tienda||'—'))} · Ruta ${escapeHtml(String(t.ruta||'—'))}</div></div>`).join('')
+    :'<div class="empty">No se encontraron tiendas en esta ruta.</div>';
 }
 function escapeHtml(s){return String(s).replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]))}
 
@@ -682,7 +768,7 @@ async function logout(){
   if(pending.some(x=>x.codigo_promotor===state.promotor?.numero_empleado)&&!confirm('Hay visitas pendientes de envío. No se borrarán, pero necesitarás volver a iniciar sesión para enviarlas. ¿Cerrar sesión?'))return;
   try{if(navigator.onLine)await sb.auth.signOut()}catch(e){}
   await delMeta('profile');await delMeta('stores');await delMeta('keyword');
-  state={promotor:null,tiendasRuta:[],visitaActual:null,offlineMode:false,pendingCount:0};resetForm();showScreen('screen-login');document.getElementById('input-pin').value='';
+  state={promotor:null,tiendasRuta:[],visitaActual:null,offlineMode:false,pendingCount:0,supervisorRutaSeleccionada:''};resetForm();showScreen('screen-login');document.getElementById('input-pin').value='';
 }
 async function bootApp(){
   await registerOfflineApp();
